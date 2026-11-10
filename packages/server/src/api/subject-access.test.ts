@@ -436,9 +436,12 @@ describe('the information about a person with an access (#355)', () => {
   it('names the address that waits for its link and counts those asked for on other accounts', async () => {
     // The Leitung has one waiting already, from the rows of the instance,
     // asked for by nobody who is still there; it asks for one of the colleague.
+    // Its link runs out long after any run of these tests: the table refuses a
+    // row that runs out before it was made, and a date that has passed made
+    // this test fail from 07.11.2026 on.
     await admin.query(
       `insert into auth_address_confirmations (user_id, email, token_hash, requested_by, expires_at)
-       values ($1, 'neu-kollegium@nord.example', $3, $2, '2026-11-06T09:00:00Z')`,
+       values ($1, 'neu-kollegium@nord.example', $3, $2, '2099-11-06T09:00:00Z')`,
       [north.colleagueId, north.userId, 'c'.repeat(64)],
     )
 
@@ -448,7 +451,7 @@ describe('the information about a person with an access (#355)', () => {
 
       expect(await account(north.colleagueId)).toMatchObject({
         pendingEmail: 'neu-kollegium@nord.example',
-        pendingUntil: '2026-11-06T09:00:00.000Z',
+        pendingUntil: '2099-11-06T09:00:00.000Z',
         pendingByLead: true,
         requestedForOthers: 0,
       })
