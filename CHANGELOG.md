@@ -15,6 +15,7 @@ die Versionsnummern folgen der [Semantischen Versionierung](https://semver.org/l
 
 ### Geändert
 
+- Der Test der Auskunft über eine wartende Adresse legt deren Bestätigung mit einer Frist im Jahr 2099 an statt am 06.11.2026. Warum: Die Tabelle lehnt eine Bestätigung ab, deren Frist vor ihrem Anlegen endet, und seit dem 07.11.2026 war der Test deshalb bei jedem Lauf rot.
 - Das Review der Organisation steht auf `520efcc` von OpenGewerk/.github (OpenGewerk/.github#54) und prüft neben der Sicherheit auch die Korrektheit eines Pull Requests. Mit Opus statt Sonnet läuft es seit demselben Tag über die Variable `SECURITY_REVIEW_MODEL` der Organisation, nicht über diesen Pin. Warum: es hatte zwei Fehler übersehen, die CodeRabbit fand, eine nicht gehaltene Frist und eine am Telefon fehlende Spalte.
 - Das Security-Review steht auf `e53047a` von OpenGewerk/.github (OpenGewerk/.github#50) und wird
   unter dem neuen Namen der Organisation aufgerufen. Der Stand nimmt den Namen im Pin und in einer
