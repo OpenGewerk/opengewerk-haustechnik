@@ -4,7 +4,8 @@ import { describe, expect, it } from 'vitest'
 import { hasHolidays, holidayClosures, holidaysBetween } from './holiday.js'
 
 // Three holidays of Baden-Württemberg as the package writes them, one of
-// them ended, and a rule of a day of another state.
+// them ended, a rule of a day of another state, and the Buß- und Bettag of
+// Saxony, the Wednesday before the 23rd of November.
 const catalogue = {
   ruleSet: ruleSet([
     {
@@ -48,6 +49,16 @@ const catalogue = {
       note: 'Mariä Himmelfahrt',
     },
     {
+      key: 'feiertage.repentance_day',
+      scope: 'DE-SN',
+      validFrom: '1995-01-01' as IsoDate,
+      validUntil: null,
+      unit: 'wednesday_before',
+      value: 1123,
+      source: '§ 1 SächsSFG',
+      note: 'Buß- und Bettag',
+    },
+    {
       key: 'probe.interval',
       validFrom: '2015-06-01' as IsoDate,
       validUntil: null,
@@ -89,6 +100,14 @@ describe('the statutory public holidays of a state', () => {
     expect(
       holidaysBetween(catalogue, 'DE-BY', day('2026-01-01'), day('2026-12-31')).map((h) => h.name),
     ).toEqual(['Mariä Himmelfahrt'])
+  })
+
+  it('are a Wednesday before a day of the year as well', () => {
+    expect(hasHolidays(catalogue, 'DE-SN')).toBe(true)
+    expect(holidaysBetween(catalogue, 'DE-SN', day('2026-11-01'), day('2027-11-30'))).toEqual([
+      { day: '2026-11-18', name: 'Buß- und Bettag', source: '§ 1 SächsSFG' },
+      { day: '2027-11-17', name: 'Buß- und Bettag', source: '§ 1 SächsSFG' },
+    ])
   })
 
   it('are days a plan makes no round on, with the holiday as the reason', () => {
