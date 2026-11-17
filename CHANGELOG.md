@@ -7,6 +7,15 @@ die Versionsnummern folgen der [Semantischen Versionierung](https://semver.org/l
 
 ## [Unreleased]
 
+## [0.2.7] - 2026-11-17
+
+Eine Sicherheitsfassung. Das Fundament steht auf dem Stand von OpenGewerk 0.8.0 und bringt dessen acht Korrekturen
+mit, dazu eine eigene: Die Auslöserfunktion, über die eine Datei mit ihrem Druck geht, war für jede Rolle ausführbar
+und ist jetzt geschlossen. Der Renderer für PDFs läuft auf derselben Fassung wie im Fundament.
+
+Aktualisiert wird wie bei jeder Fassung, vorher gesichert. Eine Migration kommt dazu, `0117_foundation_0_8_0`;
+Sitzungen von vorher gelten weiter, abgemeldet wird dabei niemand.
+
 ### Hinzugefügt
 
 - Jeder Push auf `main`, jeder Tag und jedes Löschen eines Zweigs wird nach Codeberg gespiegelt
@@ -34,7 +43,6 @@ die Versionsnummern folgen der [Semantischen Versionierung](https://semver.org/l
   Release-Workflows schreibt; Fassungen bis 0.2.6 sind noch unter dem alten Namen signiert und bringen
   ihre eigene `application.env` mit. Die Namen der Abbilder auf ghcr.io und Docker Hub bleiben klein
   geschrieben, dort sind Großbuchstaben nicht erlaubt.
-
 - `better-auth` steht nicht mehr unter den devDependencies des Servers (#620). Warum: Kein Code der Haustechnik nutzt es, das Fundament bringt es selbst mit, und die Zeile zog eine ältere Fassung daneben ins Lockfile.
 
 ### Sicherheit
