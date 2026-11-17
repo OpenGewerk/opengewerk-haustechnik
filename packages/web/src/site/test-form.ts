@@ -1,7 +1,7 @@
 import {
-  blockFieldKinds,
   type CatalogueBundle,
   type CatalogueRule,
+  fieldKinds,
   type PackagedForm,
 } from '@opengewerk/haustechnik-domain'
 
@@ -116,7 +116,7 @@ export const heaterCheck: PackagedForm = {
 }
 
 /** The kinds the form above holds, which have to be every kind there is. */
-export const kindsInTheForm = blockFieldKinds.filter((kind) =>
+export const kindsInTheForm = fieldKinds.filter((kind) =>
   technicalRoom.sections.some((section) =>
     section.fields.some(
       (field) =>

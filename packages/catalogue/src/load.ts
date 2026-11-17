@@ -390,6 +390,11 @@ const unitNames: Readonly<Record<RuleUnit, string>> = {
   count_per_100_ml: 'Anzahl je 100 ml',
   month_day: 'einem Tag im Jahr',
   days_from_easter: 'Tagen ab Ostersonntag',
+  wednesday_before: 'dem Mittwoch vor einem Tag im Jahr',
+  milliohms: 'Milliohm',
+  microamperes: 'Mikroampere',
+  millimetres: 'Millimetern',
+  square_micrometres: 'Quadratmikrometern',
 }
 
 /** Says so when a reference to a rule leads nowhere or to a rule in another unit. */

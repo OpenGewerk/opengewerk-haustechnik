@@ -1,7 +1,13 @@
 import { blockFieldKinds, ruleSet } from '@opengewerk/platform-domain'
 import { describe, expect, it } from 'vitest'
 
-import { type FormDefinition, formUnits, forms, type MeasurementField } from './forms.js'
+import {
+  fieldKinds,
+  type FormDefinition,
+  formUnits,
+  forms,
+  type MeasurementField,
+} from './forms.js'
 import { meterUnits, meterUnitSymbol } from './meter.js'
 
 /**
@@ -51,10 +57,10 @@ const round: FormDefinition = {
 }
 
 describe('the forms of this application', () => {
-  it('know every kind of field the foundation knows, and a field about an asset or a room', () => {
+  it('know every kind of field of this application, and a field about an asset or a room', () => {
     expect(forms.definitionProblems(round)).toEqual([])
 
-    for (const kind of blockFieldKinds) {
+    for (const kind of fieldKinds) {
       expect(
         forms.definitionProblems({
           ...round,
@@ -66,6 +72,18 @@ describe('the forms of this application', () => {
         `boiler_room_round: das Feld f hat die Art ${kind}, die diese Anwendung nicht zeigt.`,
       )
     }
+  })
+
+  it('refuse a day of its own, which has no input here', () => {
+    expect(blockFieldKinds).toContain('date')
+    expect(
+      forms.definitionProblems({
+        ...round,
+        sections: [
+          { key: 'one', title: 'Eins', fields: [{ kind: 'date', key: 'f', label: 'F' } as never] },
+        ],
+      }),
+    ).toContain('boiler_room_round: das Feld f hat die Art date, die diese Anwendung nicht zeigt.')
   })
 
   it('point at no other kind of record', () => {

@@ -1,5 +1,6 @@
+import { plainInMarkdown } from '@opengewerk/platform-domain'
+
 import { membershipRemovalDays } from './membership-end.js'
-import { plainInMarkdown } from './processing-description.js'
 import { type DeletionRuleKey, holdsForInWords } from './processing-record.js'
 import {
   type RecordRetentionKind,

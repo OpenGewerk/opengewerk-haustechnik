@@ -37,10 +37,6 @@ overrides:
   # GHSA-67mh-4wv8-2f99, under @esbuild-kit/core-utils of drizzle-kit. 0.25 is
   # the line drizzle-kit itself requires, so both resolve to one esbuild.
   'esbuild@<0.25.0': 0.25.12
-  # GHSA-q7qp-rjg7-q26m, under @nestjs/platform-express 12.0.3. Nest itself
-  # stays on the version of the foundation in the submodule, so that the tree
-  # holds one Nest; the foundation moves to 12.3.3 with the next lift.
-  'multer@>=2.0.0 <2.5.0': 2.5.0
   # GHSA-gcqx-w48m-w2h4 has no fixed version. @rollup/plugin-node-resolve only
   # copies its own defaults with it; the patch below does that with
   # structuredClone, and this entry drops deepmerge from the tree.

@@ -1,4 +1,4 @@
-import { plainInMarkdown } from './processing-description.js'
+import { plainInMarkdown } from '@opengewerk/platform-domain'
 
 /**
  * The record of the processing (#358, sections 3 and 9 of the concept,

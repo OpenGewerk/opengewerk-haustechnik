@@ -2,6 +2,7 @@ import {
   type DeadlineReminder,
   deadlineReminderLabel,
   type Id,
+  plainInMarkdown,
   type TenantOwned,
 } from '@opengewerk/platform-domain'
 
@@ -119,15 +120,6 @@ export const defaultProcessingFacts: ProcessingFacts = {
     leadDays: kind.leadDays,
     reminder: 'email_and_push',
   })),
-}
-
-/**
- * A value from the operator as plain text in Markdown: a mark that would make
- * it bold, code, a link or a cell of a table is escaped, so that a name stays
- * the name it is.
- */
-export function plainInMarkdown(value: string): string {
-  return value.replace(/[\\`*_[\]|<>]/g, (mark) => `\\${mark}`).replace(/\s+/g, ' ')
 }
 
 function days(count: number): string {

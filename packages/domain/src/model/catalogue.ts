@@ -962,6 +962,16 @@ export function ruleValueWords(value: number, unit: RuleUnit): string {
       return value === 0
         ? 'Ostersonntag'
         : `${counted(Math.abs(value), 'Tag', 'Tage')} ${value < 0 ? 'vor' : 'nach'} Ostersonntag`
+    case 'wednesday_before':
+      return `Mittwoch vor dem ${ruleValueWords(value, 'month_day')}`
+    case 'milliohms':
+      return `${String(value)} mΩ`
+    case 'microamperes':
+      return `${String(value)} µA`
+    case 'millimetres':
+      return `${String(value)} mm`
+    case 'square_micrometres':
+      return `${String(value)} µm²`
   }
 }
 
@@ -1020,10 +1030,19 @@ export function ruleUnitEntry(unit: RuleUnit): {
       return { symbol: 't CO2-Äquivalent', places: 0 }
     case 'count_per_100_ml':
       return { symbol: 'je 100 ml', places: 0 }
+    case 'milliohms':
+      return { symbol: 'mΩ', places: 0 }
+    case 'microamperes':
+      return { symbol: 'µA', places: 0 }
+    case 'millimetres':
+      return { symbol: 'mm', places: 0 }
+    case 'square_micrometres':
+      return { symbol: 'µm²', places: 0 }
     case 'flag':
     case 'factor':
     case 'month_day':
     case 'days_from_easter':
+    case 'wednesday_before':
       return { symbol: '', places: 0 }
   }
 }

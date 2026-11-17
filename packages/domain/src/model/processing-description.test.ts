@@ -1,3 +1,4 @@
+import { plainInMarkdown } from '@opengewerk/platform-domain'
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -5,7 +6,6 @@ import {
   changedSections,
   defaultProcessingFacts,
   describeProcessing,
-  plainInMarkdown,
   processingFactLines,
   processingHoldsFor,
   ProcessingTemplateError,

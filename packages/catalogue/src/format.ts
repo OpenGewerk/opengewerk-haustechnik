@@ -21,8 +21,8 @@ import {
   type FederalState,
   federalStates,
   type FormDefinition,
-  type FormFieldKind,
-  formFieldKinds,
+  type FormKind,
+  formKinds,
   forms,
   intervalKinds,
   onceStarts,
@@ -1224,7 +1224,7 @@ export function readDutyKind(
  */
 const fieldBase = ['kind', 'key', 'label', 'hint', 'required', 'carry'] as const
 
-const fieldProperties: Readonly<Record<FormFieldKind, readonly string[]>> = {
+const fieldProperties: Readonly<Record<FormKind, readonly string[]>> = {
   text: [...fieldBase, 'multiline'],
   number: [...fieldBase, 'unit', 'decimals'],
   measurement: [...fieldBase, 'unit', 'decimals', 'limit'],
@@ -1271,12 +1271,12 @@ function formFieldShaped(value: unknown, spot: Spot, findings: Findings): boolea
 
   const kind = value['kind']
 
-  if (typeof kind !== 'string' || !(formFieldKinds as readonly string[]).includes(kind)) {
+  if (typeof kind !== 'string' || !(formKinds as readonly string[]).includes(kind)) {
     findings.say(
       below(spot, 'kind'),
       kind === undefined
         ? 'Das Feld fehlt.'
-        : `${JSON.stringify(kind)} ist keine der Arten ${formFieldKinds.join(', ')}.`,
+        : `${JSON.stringify(kind)} ist keine der Arten ${formKinds.join(', ')}.`,
     )
     return false
   }
@@ -1294,7 +1294,7 @@ function formFieldShaped(value: unknown, spot: Spot, findings: Findings): boolea
     Object.fromEntries(Object.entries(value).filter(([name]) => name !== 'about')),
     spot,
     findings,
-    fieldProperties[kind as FormFieldKind],
+    fieldProperties[kind as FormKind],
   )
 
   for (const [name, type] of Object.entries(propertyTypes)) {

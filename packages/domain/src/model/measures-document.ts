@@ -1,10 +1,10 @@
 import {
   instanceMeasureSections,
   type InstanceMeasures,
+  plainInMarkdown,
   type Subprocessor,
 } from '@opengewerk/platform-domain'
 
-import { plainInMarkdown } from './processing-description.js'
 import { holdsForInWords } from './processing-record.js'
 
 /**

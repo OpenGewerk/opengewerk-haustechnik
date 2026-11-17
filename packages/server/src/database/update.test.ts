@@ -5069,3 +5069,54 @@ describe('the addresses of the accounts from before 0116', () => {
     ])
   })
 })
+
+describe('the database of the foundation 0.8.0 from 0117', () => {
+  /** The migrations an installation carried before 0117. */
+  const before = 117
+
+  /** Whether every role may create in public. */
+  async function createsInPublic(): Promise<boolean> {
+    const { rows } = await admin.query<{ open: boolean }>(
+      `select exists (select 1 from pg_namespace n, aclexplode(n.nspacl) a
+                       where n.nspname = 'public' and a.grantee = 0
+                         and a.privilege_type = 'CREATE') as open`,
+    )
+
+    return rows[0]?.open ?? false
+  }
+
+  it('gives the sessions of before the count of their account, keeps public to the owner, and goes back', async () => {
+    await runMigrations(ownerDatabaseUrl(), kept(migrationsFolderUpTo(before)))
+    // As a cluster upgraded from before PostgreSQL 15 still has it.
+    await admin.query('grant create on schema public to public')
+    await admin.query(
+      `insert into auth_users (id, name, email) values ('anna', 'Anna Abend', 'anna@beispiel.example')`,
+    )
+    await admin.query(
+      `insert into auth_sessions (id, token, user_id, expires_at)
+         values ('s1', 't1', 'anna', now() + interval '1 day')`,
+    )
+
+    await runMigrations(ownerDatabaseUrl())
+
+    const { rows } = await admin.query<{ id: string; credential_generation: number | null }>(
+      'select id, credential_generation from auth_sessions',
+    )
+
+    // The count the account has, the first: nothing was revoked under it
+    // yet, and the session stays signed in.
+    expect(rows).toEqual([{ id: 's1', credential_generation: 0 }])
+    // And no role but the owner creates in public any more.
+    expect(await createsInPublic()).toBe(false)
+
+    await revertMigration(admin, '0117_foundation_0_8_0')
+
+    const { rows: columns } = await admin.query<{ table_name: string }>(
+      `select table_name from information_schema.columns
+        where table_schema = 'public' and column_name in ('credential_generation', 'opened_in')`,
+    )
+
+    expect(columns).toEqual([])
+    expect(await functionNames(admin)).not.toContain('session_fits_its_credentials')
+  })
+})
