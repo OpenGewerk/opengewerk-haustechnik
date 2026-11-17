@@ -38,7 +38,19 @@ describe('the functions of this database', () => {
     )
 
     expect(rows.length).toBeGreaterThan(100)
-    expect(rows.filter((row) => !row.path?.endsWith('pg_temp'))).toEqual([])
+    // The entries of the path, the temporary schema exactly once and last:
+    // a schema whose name only ends like it is no such entry.
+    const lastIsTemporary = (path: string | null) => {
+      const entries = (path?.slice('search_path='.length) ?? '')
+        .split(',')
+        .map((entry) => entry.trim().replace(/^"|"$/g, ''))
+
+      return (
+        entries.filter((entry) => entry === 'pg_temp').length === 1 && entries.at(-1) === 'pg_temp'
+      )
+    }
+
+    expect(rows.filter((row) => !lastIsTemporary(row.path))).toEqual([])
   })
 
   it('that run as the owner are open to no role that asks for them by itself', async () => {
