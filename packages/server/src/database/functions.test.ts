@@ -1,7 +1,7 @@
 import type { Pool } from 'pg'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { connect, resetToMigrated } from './test-database.js'
+import { applicationRole, connect, resetToMigrated } from './test-database.js'
 
 // The functions of this database, the foundation's and this application's
 // own (opengewerk#975, migration 0117). A function that runs as the owner of
@@ -63,6 +63,24 @@ describe('the functions of this database', () => {
               or exists (select 1 from aclexplode(p.proacl) a
                           where a.grantee = 0 and a.privilege_type = 'EXECUTE'))
        order by 1`,
+    )
+
+    expect(rows).toEqual([])
+  })
+
+  it('that run as the owner on a trigger are closed to the role of the application', async () => {
+    // A trigger function is what the application role could hang on a
+    // temporary table of its own; the other functions of the owner that it may
+    // call are granted to it on purpose, such as the lock before a file is
+    // named (`file_naming_lock`), and check their caller themselves.
+    const { rows } = await admin.query<{ signature: string }>(
+      `select p.oid::regprocedure::text as signature
+       ${ownFunctions}
+         and p.prosecdef
+         and p.prorettype = 'trigger'::regtype
+         and has_function_privilege($1, p.oid, 'EXECUTE')
+       order by 1`,
+      [applicationRole],
     )
 
     expect(rows).toEqual([])
