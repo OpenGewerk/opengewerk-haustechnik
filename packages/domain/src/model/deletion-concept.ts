@@ -149,6 +149,13 @@ export function deletionRules(facts: DeletionFacts): readonly DeletionRule[] {
       proofs: ['B437', 'B438'],
     },
     {
+      key: 'address-link',
+      data: 'Eine neue E-Mail-Adresse, die auf den Link in der Mail an sie wartet',
+      when: 'spätestens einen Tag, nachdem der Link abgelaufen ist; er gilt einen Tag',
+      setting: 'nein',
+      proofs: ['B485', 'B486'],
+    },
+    {
       key: 'device-store',
       data: 'Was auf einem Gerät liegt',
       when: `ein abgeschlossener Vorgang und eine erledigte Aufgabe nach ${count(facts.deviceStoreDays, 'Tag', 'Tagen')}, was die Person nicht mehr sieht beim nächsten Abgleich, alles beim Abmelden`,

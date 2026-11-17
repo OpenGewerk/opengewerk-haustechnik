@@ -142,6 +142,9 @@ export * from './model/round-plan.js'
 // plan of a round keeps them as the numbers of ISO 8601, and here the names
 // mean those.
 export { weekdayLabel, weekdays, weekdayShort, type Weekday } from './model/round-plan.js'
+// The foundation asks for a person since 0.7.0; a qualification here hangs on
+// an account (#618).
+export { qualificationProblems } from './model/qualification-account.js'
 export * from './model/round-record.js'
 export * from './model/round-template.js'
 export * from './model/activity-register.js'

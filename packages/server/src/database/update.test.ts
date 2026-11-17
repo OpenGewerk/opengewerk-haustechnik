@@ -5074,6 +5074,16 @@ describe('the database of the foundation 0.8.0 from 0117', () => {
   /** The migrations an installation carried before 0117. */
   const before = 117
 
+  /** The sequences of the counters of the tenants. */
+  async function syncCounters(): Promise<string[]> {
+    const { rows } = await admin.query<{ name: string }>(
+      `select c.relname as name from pg_class c join pg_namespace n on n.oid = c.relnamespace
+        where n.nspname = 'public' and c.relkind = 'S' and c.relname like 'sync\\_counter\\_t%'`,
+    )
+
+    return rows.map((row) => row.name)
+  }
+
   /** Whether every role may create in public. */
   async function createsInPublic(): Promise<boolean> {
     const { rows } = await admin.query<{ open: boolean }>(
@@ -5109,7 +5119,29 @@ describe('the database of the foundation 0.8.0 from 0117', () => {
     // And no role but the owner creates in public any more.
     expect(await createsInPublic()).toBe(false)
 
+    // A tenant whose counter was drawn from has a sequence of its own, made by
+    // the owner of the tables as the change log draws it.
+    const tenant = newId<'tenant'>()
+    const client = await admin.connect()
+
+    try {
+      await client.query('insert into tenants (id, name) values ($1, $2)', [
+        tenant,
+        'Wohnbau Nord eG',
+      ])
+      await client.query(`set role "${ownerRole}"`)
+      await client.query('select public.take_sync_numbers($1, 1)', [tenant])
+    } finally {
+      await client.query('reset role')
+      client.release()
+    }
+
+    expect(await syncCounters()).toHaveLength(1)
+
     await revertMigration(admin, '0117_foundation_0_8_0')
+
+    // The rollback takes it with it, as the block of the foundation does.
+    expect(await syncCounters()).toEqual([])
 
     const { rows: columns } = await admin.query<{ table_name: string }>(
       `select table_name from information_schema.columns

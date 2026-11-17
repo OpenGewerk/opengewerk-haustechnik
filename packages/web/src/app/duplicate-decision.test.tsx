@@ -211,6 +211,12 @@ describe('the card of a possible duplicate', () => {
       expect([...closed].sort()).toEqual(['k-asset', 'k-file', 'k-label', 'k-photo'])
     })
 
+    // Both go out one after the other, each past the check that the store
+    // still belongs to the account (foundation 0.8.0, opengewerk#878).
+    await waitFor(() => {
+      expect(queued(server)).toHaveLength(2)
+    })
+
     const sent = queued(server)
 
     // The asset in the boiler room has its label already: the sticker of the

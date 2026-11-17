@@ -28,6 +28,7 @@ export type DeletionRuleKey =
   | 'access-data'
   | 'sessions'
   | 'password-link'
+  | 'address-link'
   | 'outside-answer'
   | 'outside-count'
   | 'push-subscription'
@@ -61,7 +62,7 @@ export const processingActivities = [
     data: 'Name, E-Mail-Adresse, Passwort als Hash, Passkeys, zweiter Faktor, Sitzungen mit Gerät, Beginn und Netzadresse',
     purpose: 'Anmeldung an der Anwendung und Schutz der Konten vor fremdem Zugriff',
     legalBasis: 'Art. 6 Abs. 1 lit. b DSGVO; Art. 6 Abs. 1 lit. c mit Art. 32 DSGVO',
-    deletion: ['sessions', 'password-link', 'access-data'],
+    deletion: ['sessions', 'password-link', 'address-link', 'access-data'],
   },
   {
     key: 'access',

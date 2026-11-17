@@ -831,6 +831,20 @@ GRANT EXECUTE ON FUNCTION public.record_change() TO PUBLIC;--> statement-breakpo
 GRANT EXECUTE ON FUNCTION public.record_instance_change() TO PUBLIC;--> statement-breakpoint
 GRANT EXECUTE ON FUNCTION public.version_takes_its_files() TO PUBLIC;--> statement-breakpoint
 DROP FUNCTION IF EXISTS public.take_sync_numbers(uuid,bigint);--> statement-breakpoint
+DO $$
+DECLARE
+	counter text;
+BEGIN
+	FOR counter IN
+		SELECT c.relname
+		  FROM pg_catalog.pg_class c
+		  JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+		 WHERE n.nspname = 'public' AND c.relkind = 'S' AND c.relname OPERATOR(pg_catalog.~~) 'sync\_counter\_t%'
+	LOOP
+		EXECUTE pg_catalog.format('DROP SEQUENCE IF EXISTS %I.%I', 'public', counter);
+	END LOOP;
+END
+$$;--> statement-breakpoint
 DROP FUNCTION IF EXISTS public.session_fits_its_credentials();--> statement-breakpoint
 DROP FUNCTION IF EXISTS public.lock_sync_counter(uuid);--> statement-breakpoint
 DROP FUNCTION IF EXISTS public.lock_audit_chain(uuid);--> statement-breakpoint
