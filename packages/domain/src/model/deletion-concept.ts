@@ -149,13 +149,6 @@ export function deletionRules(facts: DeletionFacts): readonly DeletionRule[] {
       proofs: ['B437', 'B438'],
     },
     {
-      key: 'address-link',
-      data: 'Eine neue E-Mail-Adresse, die auf den Link in der Mail an sie wartet',
-      when: 'spätestens einen Tag, nachdem der Link abgelaufen ist; er gilt einen Tag',
-      setting: 'nein',
-      proofs: ['B485', 'B486'],
-    },
-    {
       key: 'device-store',
       data: 'Was auf einem Gerät liegt',
       when: `ein abgeschlossener Vorgang und eine erledigte Aufgabe nach ${count(facts.deviceStoreDays, 'Tag', 'Tagen')}, was die Person nicht mehr sieht beim nächsten Abgleich, alles beim Abmelden`,
@@ -172,13 +165,20 @@ export function deletionRules(facts: DeletionFacts): readonly DeletionRule[] {
       setting: 'bei der Verwaltung der Instanz',
       proofs: ['B64'],
     },
-    // Last, so that the numbers of the rules before it stay as they were printed (#540).
+    // Last, so that the numbers of the rules before them stay as they were printed (#540).
     {
       key: 'outside-count',
       data: 'Die Zählung der Seite eines Etiketts für Meldungen ohne Konto: der Hashwert des Anschlusses und des Codes und der Zeitpunkt, nie Anschluss oder Code selbst',
       when: 'nach einer Stunde, mit dem nächsten Aufruf einer solchen Seite',
       setting: 'nein',
       proofs: ['B484'],
+    },
+    {
+      key: 'address-link',
+      data: 'Eine neue E-Mail-Adresse, die auf den Link in der Mail an sie wartet',
+      when: 'spätestens einen Tag, nachdem der Link abgelaufen ist; er gilt einen Tag',
+      setting: 'nein',
+      proofs: ['B485', 'B486'],
     },
   ]
 }
