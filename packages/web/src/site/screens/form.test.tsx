@@ -1,4 +1,4 @@
-import { type BlockFieldKind, blockFieldKinds } from '@opengewerk/haustechnik-domain'
+import { type FieldKind, fieldKinds } from '@opengewerk/haustechnik-domain'
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 
@@ -60,7 +60,7 @@ const fieldsInOrder = technicalRoom.sections
   .filter((field) => field.kind !== 'group' && field.kind !== 'signature')
 
 /** The input each kind of field is answered with, found by what a reader hears it called. */
-const inputOf: Readonly<Record<BlockFieldKind, (label: string) => HTMLElement>> = {
+const inputOf: Readonly<Record<FieldKind, (label: string) => HTMLElement>> = {
   text: (label) => screen.getByRole('textbox', { name: label }),
   number: (label) => screen.getByRole('textbox', { name: new RegExp(`^${label} in `) }),
   measurement: (label) => screen.getByRole('textbox', { name: new RegExp(`^${label} in `) }),
@@ -75,11 +75,11 @@ const inputOf: Readonly<Record<BlockFieldKind, (label: string) => HTMLElement>> 
 
 describe('the form of an activity on site', () => {
   it('draws every kind of field the forms of this application have', async () => {
-    expect(kindsInTheForm).toEqual([...blockFieldKinds])
+    expect(kindsInTheForm).toEqual([...fieldKinds])
 
     await mountSite(point('outlet'), { server: serverWith(), ...withTheForm })
 
-    const seen: BlockFieldKind[] = []
+    const seen: FieldKind[] = []
 
     for (;;) {
       const sub = await screen.findByText(/^Punkt \d+ von \d+$/)
@@ -103,7 +103,7 @@ describe('the form of an activity on site', () => {
       })
     }
 
-    expect([...seen].sort()).toEqual([...blockFieldKinds].sort())
+    expect([...seen].sort()).toEqual([...fieldKinds].sort())
   })
 
   it('writes a check point with the remark given before its answer, and changes it after', async () => {

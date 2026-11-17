@@ -6,6 +6,7 @@ import {
   invitationLinks,
   readConfiguration,
   runInstance,
+  startAddressSweep,
   startFileSweep,
   startupLine,
   stopOnSignals,
@@ -42,12 +43,14 @@ async function start(): Promise<void> {
   let deadlineWorker: { readonly stop: () => Promise<void> } | null = null
   let pushWorker: { readonly stop: () => Promise<void> } | null = null
   let fileSweep: { readonly stop: () => Promise<void> } | null = null
+  let addressSweep: { readonly stop: () => Promise<void> } | null = null
 
   stopOnSignals(application.name, [
     () => mailWorker?.stop(),
     () => deadlineWorker?.stop(),
     () => pushWorker?.stop(),
     () => fileSweep?.stop(),
+    () => addressSweep?.stop(),
     instance.stopSettings,
     () => instance.application.close(),
     () => instance.database.close(),
@@ -85,6 +88,9 @@ async function start(): Promise<void> {
     // The bytes of a file no operator holds any more go out of the store,
     // once a day (#657 in the repository opengewerk).
     fileSweep = startFileSweep(instance.database, instance.files)
+    // A new address whose link ran out goes, checked every hour (#862 in
+    // the repository opengewerk).
+    addressSweep = startAddressSweep(instance.database)
   }
 
   // The jobs that tell people what is due (#126). Neither runs on a closed

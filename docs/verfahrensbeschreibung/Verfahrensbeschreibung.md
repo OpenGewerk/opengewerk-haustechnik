@@ -1069,6 +1069,8 @@ Pfade ohne Vorsatz liegen im Repository `opengewerk/opengewerk-haustechnik`. Pfa
 | B482 | Test | `packages/server/src/prints/pades.test.ts` | `is certified with DocMDP, filling in and signing alone allowed after it (#561)` |
 | B483 | Test | `packages/server/src/prints/pades.test.ts` | `lets a reader print, copy, fill in and sign, and neither change nor assemble it (#561)` |
 | B484 | Test | `packages/server/src/api/outside-reports.test.ts` | `keep no address and no code, and nothing past its hour (#540)` |
+| B485 | Test | `upstream/opengewerk/packages/platform/server/src/authentication/address-confirmation.test.ts` | `goes with the sweep, and one whose link still works stays` |
+| B486 | Stelle | `packages/server/src/main.ts` | `startAddressSweep(instance.database)` |
 
 ---
 

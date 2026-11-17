@@ -15,8 +15,9 @@ import type { PlanClosure } from './round-plan.js'
  * #200): "Gesetzliche Feiertage je Land sind Regeln wie alle anderen, mit
  * Fundstelle und Gültigkeit, damit der Plan eines Rundgangs sie auslassen
  * kann." A holiday is a rule in a unit of a day, the same day every year
- * (`month_day`) or a day counted from Easter Sunday (`days_from_easter`), and
- * the note of the rule is its name. Nothing here invents one: a state the
+ * (`month_day`), a day counted from Easter Sunday (`days_from_easter`) or the
+ * Wednesday before a day of the year (`wednesday_before`, the Buß- und Bettag
+ * in Saxony), and the note of the rule is its name. Nothing here invents one: a state the
  * catalogue holds no holidays for has none, and a plan there is not offered
  * to leave them out.
  */
@@ -29,7 +30,7 @@ export interface Holiday {
 }
 
 /** The units a rule of a day is written in. */
-const dayUnits: ReadonlySet<string> = new Set(['month_day', 'days_from_easter'])
+const dayUnits: ReadonlySet<string> = new Set(['month_day', 'days_from_easter', 'wednesday_before'])
 
 type Rules = Pick<Catalogue, 'ruleSet'>
 

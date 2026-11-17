@@ -6,7 +6,7 @@ import { catalogueBundle } from '@opengewerk/haustechnik-catalogue'
 import { probeCatalogueBundle } from '@opengewerk/haustechnik-catalogue/testing'
 import {
   addDays,
-  blockFieldKinds,
+  fieldKinds,
   byNameIn,
   type DutyDetails,
   type DutyUpdates,
@@ -781,7 +781,7 @@ describe('a preview started as the Leitung', () => {
             field.kind === 'group' ? field.fields.map((nested) => nested.kind) : [field.kind],
           ),
         ),
-    ).toEqual(expect.arrayContaining([...blockFieldKinds]))
+    ).toEqual(expect.arrayContaining([...fieldKinds]))
   })
 
   // What the screen "Dokumente" and the cards at an asset, a room and a

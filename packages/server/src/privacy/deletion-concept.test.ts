@@ -66,6 +66,9 @@ const places: Readonly<Record<string, readonly Why[]>> = {
   // when its link is opened (opengewerk/opengewerk#754).
   'upstream/opengewerk/packages/platform/server/src/authentication/address-confirmation.ts#authAddressConfirmations':
     [{ byHand: 'eine Adresse, die auf ihren Link wartet' }],
+  // And one whose link ran out goes with the sweep of the instance, a day after at the latest (#862 there).
+  'upstream/opengewerk/packages/platform/server/src/authentication/address-sweep.ts#authAddressConfirmations':
+    ['address-link'],
   // A link to a new password still open ends once a new address holds, since it went to the old one.
   'upstream/opengewerk/packages/platform/server/src/authentication/address-confirmation.ts#authVerifications':
     ['password-link'],
@@ -86,9 +89,13 @@ const places: Readonly<Record<string, readonly Why[]>> = {
   // The sessions without a second factor, once the account has the app (#360).
   'upstream/opengewerk/packages/platform/server/src/authentication/authentication.ts#authSessions':
     ['sessions'],
-  // The other sessions of an account whose passkey or recovery codes changed, or whose second
-  // factor was taken away (#591).
-  'upstream/opengewerk/packages/platform/server/src/authentication/other-sessions.ts#authSessions':
+  // The sessions of an account whose credentials were taken back, a password, a passkey, the
+  // recovery codes or the second factor (#591), and a sign in waiting for its second code, which
+  // began with them; counted since the foundation 0.8.0 (opengewerk/opengewerk#898).
+  'upstream/opengewerk/packages/platform/server/src/authentication/credentials.ts#authSessions': [
+    'sessions',
+  ],
+  'upstream/opengewerk/packages/platform/server/src/authentication/credentials.ts#authVerifications':
     ['sessions'],
   'upstream/opengewerk/packages/platform/server/src/authentication/passkeys.ts#authPasskeys': [
     { byHand: 'ein Passkey, den seine Person löscht' },
@@ -98,9 +105,6 @@ const places: Readonly<Record<string, readonly Why[]>> = {
   ],
   'upstream/opengewerk/packages/platform/server/src/authentication/second-factor.ts#authTwoFactors':
     [{ byHand: 'der zweite Faktor eines Kontos, den die Leitung oder der Server zurücksetzt' }],
-  'upstream/opengewerk/packages/platform/server/src/authentication/staff.ts#authSessions': [
-    'sessions',
-  ],
   'upstream/opengewerk/packages/platform/server/src/instance/operators.ts#instanceOperators': [
     { byHand: 'ein Konto der Verwaltung der Instanz' },
   ],

@@ -194,11 +194,32 @@ function withCatalogueRules(calculator: LimitCalculator): LimitCalculator<FormTe
  * limits of the rules the one an operator states and the two worked out of a
  * circuit.
  */
+/**
+ * The kinds of field the forms of this application show: every kind of a
+ * block of the foundation but a day of its own (`date`, since the foundation
+ * 0.8.0), which has no input, no answer and no print here. A form that names
+ * one is refused, like any kind the application does not show.
+ */
+export const fieldKinds = blockFieldKinds.filter(
+  (kind): kind is Exclude<(typeof blockFieldKinds)[number], 'date'> => kind !== 'date',
+)
+
+export type FieldKind = (typeof fieldKinds)[number]
+
+/** The kinds of field a form of this application holds: those above, the signature and the group. */
+export const formKinds: readonly (FieldKind | 'signature' | 'group')[] = [
+  ...fieldKinds,
+  'signature',
+  'group',
+]
+
+export type FormKind = (typeof formKinds)[number]
+
 export interface FormTerms {
   readonly unit: FormUnitKey
   readonly list: 'circuits'
   readonly limit: 'stated' | WorkedOutLimitKind
-  readonly kind: (typeof blockFieldKinds)[number]
+  readonly kind: FieldKind
 }
 
 export type FormDefinition = GeneralFormDefinition<FormTerms>
@@ -239,7 +260,7 @@ export const forms = formEngine<FormTerms>({
     loop_impedance: withCatalogueRules(loopImpedance),
     rcd_trip_current: withCatalogueRules(residualTripCurrent),
   },
-  kinds: blockFieldKinds,
+  kinds: fieldKinds,
   records: formRecordKinds,
   blockKeys,
 })
