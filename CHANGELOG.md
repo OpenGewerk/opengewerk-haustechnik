@@ -27,6 +27,7 @@ die Versionsnummern folgen der [Semantischen Versionierung](https://semver.org/l
   unter dem neuen Namen der Organisation aufgerufen. Der Stand nimmt den Namen im Pin und in einer
   Submodul-Adresse in beiden Schreibweisen an. Die Adresse des Submoduls `upstream/opengewerk` nennt
   jetzt ebenfalls OpenGewerk.
+- Das Security-Review steht auf `fa57df6` von OpenGewerk/.github und wechselt jetzt auch beim Ausgabenlimit eines Arbeitsbereichs auf das zweite Konto (OpenGewerk/.github#62). Warum: Die Meldung dazu lautet seit dem 17.11.2026 anders, das Review erkannte sie nicht und endete am Pull Request ohne Bericht.
 - Die Organisation auf GitHub heißt jetzt OpenGewerk statt opengewerk. Links, Release-Notizen und die
   Beschreibungen auf Docker Hub nennen den neuen Namen. `start.sh` prüft die Signatur einer Fassung gegen
   `OpenGewerk/opengewerk-haustechnik`, weil GitHub den Namen genau so in die Identität des
