@@ -9,6 +9,10 @@
 -- - A file goes for good only once nothing names it, and never while somebody
 --   is about to name it (0140 and 0142 there, opengewerk#911): the lock of the
 --   tenant's chain of the log, taken in the order every logged change takes it.
+--   Here that holds for a key only. This application does not answer
+--   `application_file_named_by_a_value` yet, so a file that only a value names,
+--   as an evidence names its files in its state, is not held by it
+--   (opengewerk-haustechnik#622).
 -- - The counter of the sync and the chain of the log go through the address
 --   the transaction holds and are written once, before the commit (0148 and
 --   0149 there, opengewerk#953).
