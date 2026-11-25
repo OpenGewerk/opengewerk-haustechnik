@@ -641,6 +641,24 @@ describe('the insulation of the recurring test after table 11 (#630)', () => {
     expect(findings('damp')).toEqual([])
   })
 
+  it('holds 0,25 MΩ for SELV and PELV, in an IT system as well', () => {
+    // 0,100 MΩ: within the 0,012 MΩ of an IT system at 230 V, outside the 0,250 MΩ of SELV and PELV.
+    const findings = (voltageClass: AnswerCircuit['voltageClass']) =>
+      answerFindings(
+        recurring,
+        [head('earthing_system', 'it'), measured(lighting.id, 'insulation_without_loads', 100)],
+        {
+          ...judgedBy,
+          circuits: circuits.map((circuit) =>
+            circuit.id === lighting.id ? { ...circuit, voltageClass } : circuit,
+          ),
+        },
+      )
+
+    expect(findings('selv_pelv')).toHaveLength(1)
+    expect(findings('up_to_500')).toEqual([])
+  })
+
   it('wants a remark at a value outside the limit of its conditions, and none within them', () => {
     const missing = (system: string) =>
       answersMissing(

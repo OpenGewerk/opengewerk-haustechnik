@@ -458,6 +458,15 @@ const withTable11: PackagedForm = {
                         decimals: 3,
                         limit: { kind: 'recurring_insulation_without_loads' },
                       },
+                      {
+                        kind: 'choice' as const,
+                        key: 'environment',
+                        label: 'Umgebung',
+                        options: [
+                          { value: 'dry', label: 'trocken' },
+                          { value: 'damp', label: 'feucht' },
+                        ],
+                      },
                       ...field.fields,
                     ],
                   },
@@ -488,11 +497,21 @@ const table11Catalogue: CatalogueBundle = {
 }
 
 describe('a value of a circuit judged with the conditions of its activity on site (#630)', () => {
-  /** F2 with 0,020 MΩ without the loads, and the earthing system of the head where one is given. */
-  function measuredIn(system: string | null) {
+  /**
+   * F2 with 0,020 MΩ without the loads, the earthing system of the head
+   * where one is given, and the environment of its block where one is.
+   */
+  function measuredIn(system: string | null, environment: string | null = null) {
     const server = installationServer()
 
     server.put('activity_answers', measured(f2.id, 'insulation_without_loads', { value: '20' }))
+
+    if (environment !== null) {
+      server.put('activity_answers', {
+        ...measured(f2.id, 'environment', { value: JSON.stringify(environment) }),
+        id: 'an-environment',
+      })
+    }
 
     if (system !== null) {
       server.put('activity_answers', {
@@ -523,5 +542,38 @@ describe('a value of a circuit judged with the conditions of its activity on sit
     })
 
     expect(await screen.findByText('Außerhalb des Grenzwerts, mindestens 0,230 MΩ.')).toBeDefined()
+  })
+
+  it('judges it by the environment of the block of its circuit', async () => {
+    await mountSite(`/vorgaenge/${test.id}/stromkreise/${f2.id}`, {
+      server: measuredIn(null, 'damp'),
+      answers: servingCatalogue(table11Catalogue),
+    })
+
+    // 500 Ω per volt in a damp environment at 230 V.
+    expect(await screen.findByText('Außerhalb des Grenzwerts, mindestens 0,115 MΩ.')).toBeDefined()
+  })
+
+  it('asks the environment in the block of each circuit and keeps it with the circuit', async () => {
+    const { client } = await mountSite(`/vorgaenge/${test.id}/stromkreise/${f2.id}`, {
+      server: measuredIn(null),
+      answers: servingCatalogue(table11Catalogue),
+    })
+
+    fireEvent.click(await screen.findByRole('link', { name: /Umgebung/ }))
+    fireEvent.click(await screen.findByRole('radio', { name: 'feucht' }))
+
+    await waitFor(() => {
+      expect(
+        client.list('activity_answers').filter((answer) => answer['fieldKey'] === 'environment'),
+      ).toMatchObject([
+        {
+          activityId: test.id,
+          groupKey: 'circuits',
+          blockKey: f2.id,
+          value: JSON.stringify('damp'),
+        },
+      ])
+    })
   })
 })

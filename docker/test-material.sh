@@ -619,15 +619,17 @@ records_for_backup() {
   # between the count before the backup and the backup, or between the
   # restore and the count after it (opengewerk-haustechnik#634). Given up on
   # here, so that no worker takes them up again. A mail the worker has just
-  # claimed waits ten minutes ahead and is left alone until the worker has
-  # written its try; the row lock keeps the two from crossing.
+  # claimed waits exactly ten minutes ahead of its last change, which no
+  # wait after a try does (1, 5, 15, 60 and 180 minutes), and is left alone
+  # until the worker has written its try; the row lock keeps the two from
+  # crossing.
   waited=0
   until test "$(value "select count(*) from mail_outbox where status = 'pending'")" = 0; do
     sql "
       update mail_outbox
          set status = 'failed', next_attempt_at = now(),
              last_error = coalesce(last_error, 'Nicht zugestellt: Mailserver der Probe.')
-       where status = 'pending' and next_attempt_at < now() + interval '5 minutes';"
+       where status = 'pending' and next_attempt_at - updated_at <> interval '10 minutes';"
     waited=$((waited + 1))
     if [ "$waited" -gt 60 ]; then
       echo 'Im Postausgang wartet nach einer Minute noch eine E-Mail.'
