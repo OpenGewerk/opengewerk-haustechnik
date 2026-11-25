@@ -513,6 +513,25 @@ describe('the page of a board', () => {
     expect(server.queued()[0]?.values).not.toHaveProperty('position')
   })
 
+  it('saves only what its form changed, and keeps what another device set while it was open (opengewerk/opengewerk#1057)', async () => {
+    const { client } = await mount(circuitAt)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'F3 bearbeiten' }))
+    const form = dialog('F3 Steckdosen Werkbank bearbeiten')
+
+    // Meanwhile somebody else marks the RCD selective, which the limits of a test go by.
+    server.put('circuits', { ...f3, rcdSelective: true, version: 2 })
+    await client.synchronise()
+    fireEvent.change(form.getByLabelText('Nennstrom in A'), { target: { value: '20' } })
+    fireEvent.click(form.getByRole('button', { name: 'Speichern' }))
+
+    await waitFor(() => {
+      expect(server.queued()).toHaveLength(1)
+    })
+    expect(server.queued()[0]?.values).toEqual({ ratedCurrentMilli: 20_000 })
+    expect(server.row('circuits', f3.id)).toMatchObject({ rcdSelective: true })
+  })
+
   it('offers the curves that go with the device, and no other', async () => {
     await mount(boardAt)
 

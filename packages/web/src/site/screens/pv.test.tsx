@@ -301,6 +301,63 @@ describe('taking the PV structure up on site', () => {
   })
 })
 
+describe('the forms of the PV structure on site (opengewerk/opengewerk#1057)', () => {
+  const inverterAt = `${assetAt}/wechselrichter/${wr1.id}`
+
+  it.each([
+    {
+      what: 'an inverter',
+      at: `${inverterAt}/bearbeiten`,
+      title: 'WR 1 bearbeiten',
+      entity: 'inverters',
+      record: wr1,
+      meanwhile: { manufacturer: 'Anderer Hersteller' },
+      field: /Modell/,
+      typed: 'BW 12.0',
+      sent: { model: 'BW 12.0' },
+    },
+    {
+      what: 'a string',
+      at: `${stringAt}/bearbeiten`,
+      title: 'String 1 bearbeiten',
+      entity: 'pv_strings',
+      record: s1,
+      meanwhile: { tiltDeg: 30 },
+      field: /Bezeichnung/,
+      typed: 'String 1a',
+      sent: { designation: 'String 1a' },
+    },
+    {
+      what: 'a module',
+      at: `${stringAt}/module/${m1.id}/bearbeiten`,
+      title: 'Modul 1 bearbeiten',
+      entity: 'pv_modules',
+      record: m1,
+      meanwhile: { serialNumber: 'BS4-2306-9999' },
+      field: /Modell/,
+      typed: 'BS 410 M',
+      sent: { model: 'BS 410 M' },
+    },
+  ])(
+    'of $what save only what they changed, and keep what another device set while they were open',
+    async ({ at, title, entity, record, meanwhile, field, typed, sent }) => {
+      const site = await mountSite(at, { server: server() })
+
+      await screen.findByRole('heading', { level: 1, name: title })
+      site.server.put(entity, { ...record, ...meanwhile, version: 2 })
+      await site.client.synchronise()
+      fireEvent.change(screen.getByLabelText(field), { target: { value: typed } })
+      fireEvent.click(screen.getByRole('button', { name: 'Speichern' }))
+
+      await waitFor(() => {
+        expect(queued(site.server)).toHaveLength(1)
+      })
+      expect(queued(site.server)[0]?.values).toEqual(sent)
+      expect(site.server.row(entity, record.id)).toMatchObject(meanwhile)
+    },
+  )
+})
+
 describe('the rights at the PV structure on site', () => {
   it('offer no way to remove a part, also to whoever keeps the assets', async () => {
     const site = await mountSite(stringAt, { server: server(), role: 'site_management' })

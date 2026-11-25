@@ -786,7 +786,10 @@ export function SiteCircuitFormScreen() {
   }
   const last = sections.at(-1)
 
-  async function submit(values: Draft): Promise<EditResult> {
+  // What the form had when it was opened, so that only what changed here is
+  // written, and a change somebody else made meanwhile stays
+  // (opengewerk/opengewerk#1057).
+  async function submit(values: Draft, opened?: Draft): Promise<EditResult> {
     const target = sectionOf(values)
     const others = circuits.filter((each) => String(each['id']) !== circuitId)
     const result =
@@ -796,12 +799,17 @@ export function SiteCircuitFormScreen() {
             distributionBoardId: boardId,
             position: nextPosition(inSection(others, target)),
           })
-        : await client.update('circuits', circuitId, {
-            ...values,
-            ...(sectionOf(circuit) === target
-              ? {}
-              : { position: nextPosition(inSection(others, target)) }),
-          })
+        : await client.update(
+            'circuits',
+            circuitId,
+            {
+              ...values,
+              ...(sectionOf(circuit) === target
+                ? {}
+                : { position: nextPosition(inSection(others, target)) }),
+            },
+            opened,
+          )
 
     if (result.outcome === 'queued' && assetId !== undefined && boardId !== undefined) {
       await navigate({

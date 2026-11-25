@@ -313,6 +313,24 @@ describe('taking the structure down on site', () => {
     })
   })
 
+  it('saves only what its form changed, and keeps what another device set while it was open (opengewerk/opengewerk#1057)', async () => {
+    const site = await mountSite(circuitAt, { server: server() })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Bearbeiten' }))
+    await screen.findByRole('heading', { level: 1, name: 'F3 bearbeiten' })
+    // Meanwhile the office marks the RCD selective, which the limits of a test go by.
+    site.server.put('circuits', { ...f3, rcdSelective: true, version: 2 })
+    await site.client.synchronise()
+    fireEvent.change(screen.getByLabelText(/Nennstrom/), { target: { value: '20' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Speichern' }))
+
+    await waitFor(() => {
+      expect(queued(site.server)).toHaveLength(1)
+    })
+    expect(queued(site.server)[0]?.values).toEqual({ ratedCurrentMilli: 20_000 })
+    expect(site.server.row('circuits', f3.id)).toMatchObject({ rcdSelective: true })
+  })
+
   it('adds a section and a piece of equipment, each at the end of its list', async () => {
     const site = await mountSite(boardAt, { server: server() })
 
