@@ -434,7 +434,7 @@ describe('a test of the electrical installation measured on its circuits (#350)'
       (answer) => answer.circuit === circuitIds['F3'] && answer.label === 'Schleifenimpedanz Zs',
     )
 
-    expect(zs?.limit).toMatchObject({ bound: 'höchstens 2,87 Ω', within: false })
+    expect(zs?.limit).toMatchObject({ bound: 'höchstens 2,875 Ω', within: false })
     expect(zs?.workedOut).toBe('loop_impedance')
 
     const { html } = evidencePrintJob(state, rows[0]?.fingerprint ?? '', [], null)
@@ -447,7 +447,7 @@ describe('a test of the electrical installation measured on its circuits (#350)'
       '<td><strong>F3</strong> Steckdosen Werkbank</td><td class="muted protection">B 16 A, RCD 30 mA</td>',
     )
     expect(html).toContain('<td class="figure"><strong class="out">3,40</strong></td>')
-    expect(html).toContain('<td class="figure muted">≤ 2,87</td>')
+    expect(html).toContain('<td class="figure muted">≤ 2,875</td>')
     expect(html).toContain('Zs aus Charakteristik und Nennstrom (DIN VDE 0100-410')
     expect(html).toContain('RPE ohne Grenzwert')
     // The answers of the circuits stand in the table and not once more as points.

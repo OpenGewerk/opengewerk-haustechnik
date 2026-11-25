@@ -140,6 +140,19 @@ export function rowsOf(tenant: Tenant): readonly Row[] {
       },
     },
     {
+      // How an update of the instance ended, as every operator learns of it
+      // (opengewerk/opengewerk#1093).
+      table: 'update_notices',
+      values: {
+        tenant_id: tenant.id,
+        run_id: randomUUID(),
+        to_version: '0.9.0',
+        from_version: '0.8.0',
+        succeeded: true,
+        finished_at: tomorrow,
+      },
+    },
+    {
       table: 'account_corrections',
       values: {
         tenant_id: tenant.id,
@@ -1428,6 +1441,18 @@ export function rowsOfTheInstance(north: Tenant, south: Tenant): readonly Row[] 
         account_id: north.userId,
         provider_id: 'credential',
         user_id: north.userId,
+      },
+    },
+    // How an update of the instance ended, outside any tenant
+    // (opengewerk/opengewerk#1093).
+    {
+      table: 'instance_updates',
+      values: {
+        id: randomUUID(),
+        to_version: '0.9.0',
+        from_version: '0.8.0',
+        succeeded: true,
+        finished_at: tomorrow,
       },
     },
     // An address that waits for its link (opengewerk/opengewerk#754).

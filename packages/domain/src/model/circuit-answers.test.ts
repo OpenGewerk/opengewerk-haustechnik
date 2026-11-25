@@ -197,13 +197,13 @@ describe('a block of a group over the circuits (#350)', () => {
     expect(answerVerdict(loopImpedance, value, { ...context, circuit: lighting })).toEqual({
       within: true,
       limitMilli: 2_875,
-      text: 'Innerhalb des Grenzwerts, höchstens 2,87 Ω.',
+      text: 'Innerhalb des Grenzwerts, höchstens 2,875 Ω.',
       source: 'DIN VDE 0100-410, 411.4.4; DIN EN 60898-1, Typ B',
     })
     expect(answerVerdict(loopImpedance, value, { ...context, circuit: workbench })).toEqual({
       within: false,
       limitMilli: 1_437,
-      text: 'Außerhalb des Grenzwerts, höchstens 1,43 Ω.',
+      text: 'Außerhalb des Grenzwerts, höchstens 1,437 Ω.',
       source: 'DIN VDE 0100-410, 411.4.4; DIN EN 60898-1, Typ C',
     })
     // The tripping current is held to the rated residual current of the circuit.
@@ -322,13 +322,13 @@ describe('what a form over the circuits comes to with the signature (#350)', () 
     ).toEqual([
       {
         description:
-          'Messen je Stromkreis, F1 Licht Flur: Schleifenimpedanz Zs: 3,00 Ω gemessen. Außerhalb des Grenzwerts, höchstens 2,87 Ω (DIN VDE 0100-410, 411.4.4; DIN EN 60898-1, Typ B).',
+          'Messen je Stromkreis, F1 Licht Flur: Schleifenimpedanz Zs: 3,00 Ω gemessen. Außerhalb des Grenzwerts, höchstens 2,875 Ω (DIN VDE 0100-410, 411.4.4; DIN EN 60898-1, Typ B).',
         about: null,
         circuitId: lighting.id,
       },
       {
         description:
-          'Messen je Stromkreis, F3 Steckdosen Werkbank: Schleifenimpedanz Zs: 1,60 Ω gemessen. Außerhalb des Grenzwerts, höchstens 1,43 Ω (DIN VDE 0100-410, 411.4.4; DIN EN 60898-1, Typ C).',
+          'Messen je Stromkreis, F3 Steckdosen Werkbank: Schleifenimpedanz Zs: 1,60 Ω gemessen. Außerhalb des Grenzwerts, höchstens 1,437 Ω (DIN VDE 0100-410, 411.4.4; DIN EN 60898-1, Typ C).',
         about: null,
         circuitId: workbench.id,
       },

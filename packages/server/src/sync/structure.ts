@@ -1,7 +1,13 @@
-import { boardAssetKind, type Identity, inverterAssetKind } from '@opengewerk/haustechnik-domain'
+import {
+  boardAssetKind,
+  circuitAlong,
+  type Identity,
+  inverterAssetKind,
+} from '@opengewerk/haustechnik-domain'
 import {
   type FoundIdentity,
   sectionRefusal,
+  selectiveRefusal,
   structureProblem,
   type SyncCheck,
 } from '@opengewerk/platform-server'
@@ -28,6 +34,25 @@ type Check = SyncCheck<FoundIdentity<Identity>>
  * trades application refuses it.
  */
 export const structureFigures: Check = ({ operation, values, current }) => {
+  // Two people at one RCD (opengewerk/opengewerk#1021): a selective RCD sent
+  // on a circuit whose type another took away meanwhile is a conflict about
+  // this circuit, and the rest of the transmission lands.
+  const disagreement = selectiveRefusal(
+    operation.entity,
+    values,
+    current,
+    operation.kind === 'update' ? operation.baseVersion : null,
+  )
+
+  if (disagreement !== null) {
+    return { kind: 'conflict', reason: disagreement.reason, fields: disagreement.fields }
+  }
+
+  // A type taken away takes the selective along, as the form does, judged
+  // and written so: a device whose version does not know the selective still
+  // lands its change.
+  Object.assign(values, circuitAlong(operation.entity, values, current))
+
   const problem = structureProblem(operation.entity, values, current)
 
   return problem === null ? null : { kind: 'client', message: problem }

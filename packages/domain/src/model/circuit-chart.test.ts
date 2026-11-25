@@ -497,7 +497,7 @@ describe('the circuits in the evidence (#350)', () => {
         group: { label: 'Messen je Stromkreis', block: 2 },
         of: 'c-a3',
         workedOut: 'loop_impedance',
-        bound: 'höchstens 2,87 Ω',
+        bound: 'höchstens 2,875 Ω',
         within: false,
         value: '3,40 Ω',
       },

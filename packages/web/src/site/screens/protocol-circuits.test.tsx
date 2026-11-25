@@ -313,7 +313,7 @@ describe('the measurements per circuit in the protocol (#350)', () => {
       await screen.findByRole('heading', { level: 2, name: 'Steckdosen Nordwand' }),
     ).toBeDefined()
     expect(screen.getByText('B 16 A, RCD 30 mA · HV 1')).toBeDefined()
-    expect(screen.getByText(/^Außerhalb des Grenzwerts, höchstens 2,8\d Ω\.$/)).toBeDefined()
+    expect(screen.getByText('Außerhalb des Grenzwerts, höchstens 2,875 Ω.')).toBeDefined()
     // The tripping current is limited by the RCD of the circuit, before a value is given.
     expect(screen.getByText('Grenzwert: höchstens 30,0 mA.')).toBeDefined()
     expect(

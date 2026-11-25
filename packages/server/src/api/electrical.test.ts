@@ -90,7 +90,7 @@ function operation(
     entity,
     recordId,
     kind,
-    baseVersion: null,
+    baseVersion: null as number | null,
     patches: Object.entries(values).map(([field, to]) => ({
       field,
       from: seen[field] ?? null,
@@ -119,6 +119,16 @@ async function outcomes(userId: Person, operations: readonly Sent[], tenantId = 
 }
 
 const applied = { outcome: 'applied', reason: null, fields: [] }
+
+/** A circuit as a device of the Leitung holds it after a sync from the start. */
+async function circuitHeld(id: string): Promise<Record<string, unknown> | undefined> {
+  const answer = await http().get('/sync?since=0').set(testIdentityHeader, by('u-lead')).expect(200)
+  const changes = answer.body.changes as { entity: string; rows: Record<string, unknown>[] }[]
+
+  return changes
+    .find((change) => change.entity === 'circuits')
+    ?.rows.find((row) => row['id'] === id)
+}
 
 /** A property with a building in an area, put in past the application. */
 async function placeIn(tenantId: TenantId, area: string) {
@@ -545,6 +555,141 @@ describe('the electrical structure on a device (#349)', () => {
     ]).expect(400)
 
     expect(answer.body.message).toMatch(/Charakteristik|Auslöse|passt/)
+  })
+
+  /**
+   * The nominal voltage and the selective RCD the form of the foundation asks
+   * since 0.9.0 (opengewerk/opengewerk#1021): both travel, a circuit sent
+   * without them is up to 500 V with a general RCD, and selective is refused
+   * on a circuit without a type with the sentence of the form.
+   */
+  it('takes the nominal voltage and a selective RCD, and the selective only with a type', async () => {
+    const at = await placeIn(small, await areaOfSmall())
+    const { board } = await structureOn(await assetIn(at))
+    const selective = newId<'circuit'>()
+    const plain = newId<'circuit'>()
+
+    expect(
+      await outcomes('u-tech', [
+        operation('circuits', 'create', selective, {
+          distributionBoardId: board,
+          designation: 'F20',
+          voltageClass: 'selv_pelv',
+          rcdType: 'a',
+          rcdSelective: true,
+        }),
+        operation('circuits', 'create', plain, { distributionBoardId: board, designation: 'F21' }),
+      ]),
+    ).toEqual([applied, applied])
+    expect(await circuitHeld(selective)).toMatchObject({
+      voltageClass: 'selv_pelv',
+      rcdType: 'a',
+      rcdSelective: true,
+    })
+    expect(await circuitHeld(plain)).toMatchObject({
+      voltageClass: 'up_to_500',
+      rcdType: null,
+      rcdSelective: false,
+    })
+
+    const answer = await send('u-tech', [
+      operation('circuits', 'update', plain, { rcdSelective: true }, { rcdSelective: false }),
+    ]).expect(400)
+
+    expect(answer.body.message).toBe(
+      'Selektiv ist nur ein RCD mit Typ. Bitte zuerst den Typ wählen.',
+    )
+  })
+
+  /**
+   * Two people at one RCD (opengewerk/opengewerk#1021): the Leitung makes it
+   * selective, and a device that still holds the circuit from before takes
+   * its type away. The type takes the selective along, as the form does, and
+   * the transmission lands.
+   */
+  it('takes the selective along with a type taken away by a device that did not send it', async () => {
+    const at = await placeIn(small, await areaOfSmall())
+    const { board } = await structureOn(await assetIn(at))
+    const circuit = newId<'circuit'>()
+
+    await outcomes('u-lead', [
+      operation('circuits', 'create', circuit, {
+        distributionBoardId: board,
+        designation: 'F22',
+        rcdType: 'a',
+      }),
+    ])
+    expect(
+      await outcomes('u-lead', [
+        {
+          ...operation(
+            'circuits',
+            'update',
+            circuit,
+            { rcdSelective: true },
+            { rcdSelective: false },
+          ),
+          baseVersion: 1,
+        },
+      ]),
+    ).toEqual([applied])
+    expect(
+      await outcomes('u-tech', [
+        {
+          ...operation('circuits', 'update', circuit, { rcdType: null }, { rcdType: 'a' }),
+          baseVersion: 1,
+        },
+      ]),
+    ).toEqual([applied])
+    expect(await circuitHeld(circuit)).toMatchObject({ rcdType: null, rcdSelective: false })
+  })
+
+  /**
+   * The same the other way round (opengewerk/opengewerk#1021): a technician
+   * takes the type away, and the Leitung, still on the circuit from before,
+   * makes the RCD selective. That is a conflict about this circuit for a
+   * person to look at, and the rest of the transmission lands.
+   */
+  it('makes a selective RCD sent while the type went a conflict, and lands the rest', async () => {
+    const at = await placeIn(small, await areaOfSmall())
+    const { board } = await structureOn(await assetIn(at))
+    const circuit = newId<'circuit'>()
+    const other = newId<'circuit'>()
+
+    await outcomes('u-lead', [
+      operation('circuits', 'create', circuit, {
+        distributionBoardId: board,
+        designation: 'F23',
+        rcdType: 'a',
+      }),
+    ])
+    expect(
+      await outcomes('u-tech', [
+        {
+          ...operation('circuits', 'update', circuit, { rcdType: null }, { rcdType: 'a' }),
+          baseVersion: 1,
+        },
+      ]),
+    ).toEqual([applied])
+    expect(
+      await outcomes('u-lead', [
+        {
+          ...operation(
+            'circuits',
+            'update',
+            circuit,
+            { rcdSelective: true },
+            { rcdSelective: false },
+          ),
+          baseVersion: 1,
+        },
+        operation('circuits', 'create', other, { distributionBoardId: board, designation: 'F24' }),
+      ]),
+    ).toEqual([
+      { outcome: 'conflict', reason: 'changed_elsewhere', fields: ['rcdType', 'rcdSelective'] },
+      applied,
+    ])
+    expect(await circuitHeld(circuit)).toMatchObject({ rcdType: null, rcdSelective: false })
   })
 
   it('travels to the devices of the area its asset lies in and to no other', async () => {
