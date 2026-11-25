@@ -277,6 +277,11 @@ function voltageClassOf(item: unknown): CircuitVoltageClass {
 /** Where the rules for a day are not there: no limit rather than another one. */
 const noLimitThatDay = { none: 'Für diesen Tag ist kein Grenzwert hinterlegt.' } as const
 
+/** Above 500 V the recurring test counts per volt of the circuit's own nominal voltage (#630). */
+const noLimitAbove500 = {
+  none: 'Über 500 V gilt der Mindestwert je Volt der Nennspannung des Stromkreises, und die nennt das Stromkreisverzeichnis nicht.',
+} as const
+
 /**
  * The least insulation resistance of a circuit by its nominal voltage
  * (opengewerk/opengewerk#1021): 0,5 MΩ for SELV and PELV, 1,0 MΩ up to and
@@ -327,7 +332,8 @@ export const circuitTripTime: LimitCalculator<FormTerms> = (_field, { rules, on,
  * of the nominal voltage the protocol names, and without one of U0 = 230 V,
  * rounded up to whole kiloohms so that it is never looser. A circuit above
  * 500 V counts per volt of its own nominal voltage, which the chart does not
- * name, and the protocol says so rather than judge it by another.
+ * name, and the protocol says so rather than judge it by another; so it does
+ * where its head names more than 500 V, whatever the chart says of a circuit.
  */
 function recurringInsulation(loads: 'with_loads' | 'without_loads'): LimitCalculator<FormTerms> {
   return (_field, { rules, on, item }) => {
@@ -335,9 +341,7 @@ function recurringInsulation(loads: 'with_loads' | 'without_loads'): LimitCalcul
     const conditions = conditionsOf(item)
 
     if (voltageClass === 'above_500') {
-      return {
-        none: 'Über 500 V gilt der Mindestwert je Volt der Nennspannung des Stromkreises, und die nennt das Stromkreisverzeichnis nicht.',
-      }
+      return noLimitAbove500
     }
 
     if (voltageClass === 'selv_pelv') {
@@ -357,6 +361,10 @@ function recurringInsulation(loads: 'with_loads' | 'without_loads'): LimitCalcul
     const ordinary = rules.at('elektro.loop_nominal_voltage', on)
     const voltageMilli =
       conditions?.nominalVoltageMilli ?? (ordinary ? ordinary.value * 1000 : undefined)
+
+    if (voltageMilli !== undefined && voltageMilli > 500_000) {
+      return noLimitAbove500
+    }
 
     if (!perVolt || voltageMilli === undefined) {
       return noLimitThatDay

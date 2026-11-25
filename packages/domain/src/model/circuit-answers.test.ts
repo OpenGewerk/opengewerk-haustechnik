@@ -659,6 +659,24 @@ describe('the insulation of the recurring test after table 11 (#630)', () => {
     expect(findings('up_to_500')).toEqual([])
   })
 
+  it('has no limit above 500 V, where only the head names such a nominal voltage as well', () => {
+    // 0,100 MΩ: outside the 0,400 MΩ of a dry circuit at 400 V; above 500 V there is none.
+    const verdict = (voltageMilli: number, voltageClass: AnswerCircuit['voltageClass']) =>
+      answerVerdict(withoutLoads, measured(lighting.id, 'insulation_without_loads', 100), {
+        rules: table11,
+        on: '2026-10-19',
+        circuit: { ...lighting, voltageClass },
+        conditions: { nominalVoltageMilli: voltageMilli },
+      })
+
+    expect(verdict(400_000, 'up_to_500')).toMatchObject({ within: false, limitMilli: 400 })
+    expect(verdict(500_000, 'up_to_500')).toMatchObject({ within: false, limitMilli: 500 })
+    expect(verdict(690_000, 'up_to_500')).toMatchObject({ within: null, limitMilli: null })
+    expect(verdict(230_000, 'above_500')).toMatchObject({ within: null, limitMilli: null })
+    // SELV and PELV keep their 0,25 MΩ, whatever the head names.
+    expect(verdict(690_000, 'selv_pelv')).toMatchObject({ within: false, limitMilli: 250 })
+  })
+
   it('judges a block whose circuit the chart no longer has with the conditions of the activity as well', () => {
     // 0,020 MΩ in an IT system: within its 0,012 MΩ, where the circuit is gone as well.
     const answers = [
