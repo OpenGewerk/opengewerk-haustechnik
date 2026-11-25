@@ -102,12 +102,14 @@ describe('the tables', () => {
   })
 
   it('give what belongs to the instance a log of its own, and the tenants coming and going too', async () => {
-    // Who runs the instance and its settings, and `tenants` for a tenant
-    // being created or removed. The log of the instance itself is what is
-    // written, so it carries no writer.
+    // Who runs the instance and its settings, the updates of the instance
+    // (`instance_updates`, since the foundation 0.9.0), and `tenants` for a
+    // tenant being created or removed. The log of the instance itself is what
+    // is written, so it carries no writer.
     expect(await instanceLogCoverage(admin)).toEqual([
       'instance_operators',
       'instance_settings',
+      'instance_updates',
       'tenants',
     ])
   })
