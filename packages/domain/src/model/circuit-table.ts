@@ -162,11 +162,22 @@ function remarksOf(said: readonly StatedAnswer[]): string {
     .join(' ')
 }
 
+/**
+ * Why a limit worked out of the circuit is missing in a row: for the
+ * insulation of the recurring test a circuit above 500 V (#630), whose
+ * nominal voltage the chart does not name, else what protects the circuit.
+ */
+function missingBecause(kind: WorkedOutLimitKind): string {
+  return kind === 'recurring_insulation_without_loads' || kind === 'recurring_insulation_with_loads'
+    ? 'über 500 V'
+    : 'ohne Angaben zur Schutzeinrichtung'
+}
+
 /** Where the limit of each column comes from, with its sources (`CircuitTable.limits`). */
 function limitsOf(answers: readonly StatedAnswer[], columns: readonly CircuitColumn[]): string[] {
   const limited: string[] = []
   const unlimited: string[] = []
-  const without: string[] = []
+  const without = new Map<string, string[]>()
 
   for (const column of columns) {
     const ofColumn = answers.filter((answer) => answer.label === column.label)
@@ -184,7 +195,9 @@ function limitsOf(answers: readonly StatedAnswer[], columns: readonly CircuitCol
       limited.push(`${column.symbol} ${workedOutLimitWords[column.workedOut]}${from}`)
 
       if (ofColumn.some((answer) => answer.limit === null)) {
-        without.push(column.symbol)
+        const because = missingBecause(column.workedOut)
+
+        without.set(because, [...(without.get(because) ?? []), column.symbol])
       }
     } else if (bound !== undefined) {
       limited.push(`${column.symbol} ${bound}${from}`)
@@ -196,9 +209,7 @@ function limitsOf(answers: readonly StatedAnswer[], columns: readonly CircuitCol
   return [
     ...limited,
     ...(unlimited.length === 0 ? [] : [`${unlimited.join(' und ')} ohne Grenzwert`]),
-    ...(without.length === 0
-      ? []
-      : [`ohne Angaben zur Schutzeinrichtung keiner für ${without.join(' und ')}`]),
+    ...[...without].map(([because, symbols]) => `${because} keiner für ${symbols.join(' und ')}`),
   ]
 }
 

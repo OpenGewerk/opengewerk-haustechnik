@@ -293,6 +293,26 @@ describe('the table of the measurements on circuits (#350)', () => {
     ])
   })
 
+  it('names a circuit above 500 V as why the insulation of the recurring test has no limit, not its protection (#630)', () => {
+    const [table] = circuitTablesOf(
+      [
+        measured('c-f2', 'Isolationswiderstand Riso ohne Verbraucher', '2,000 MΩ', null, {
+          workedOut: 'recurring_insulation_without_loads',
+        }),
+        measured('c-f2', 'Isolationswiderstand Riso mit Verbrauchern', '1,500 MΩ', null, {
+          workedOut: 'recurring_insulation_with_loads',
+        }),
+        measured('c-f2', 'Schleifenimpedanz Zs', '1,00 Ω', null, { workedOut: 'loop_impedance' }),
+      ],
+      circuits,
+    )
+
+    expect(table?.limits.filter((line) => line.includes('keiner für'))).toEqual([
+      'über 500 V keiner für Riso ohne Verbraucher und Riso mit Verbrauchern',
+      'ohne Angaben zur Schutzeinrichtung keiner für Zs',
+    ])
+  })
+
   it('has no table where no answer stands in the block of a circuit', () => {
     expect(circuitTablesOf(answers.slice(0, 1), circuits)).toEqual([])
   })

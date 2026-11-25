@@ -346,6 +346,7 @@ table.circuits { font-size: 8pt; line-height: 1.3; }
 table.circuits th { font-size: 7pt; vertical-align: bottom; }
 table.circuits td { padding: 2px 4px; }
 table.circuits .figure { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+table.circuits th.figure { white-space: normal; }
 table.circuits .protection { white-space: nowrap; }
 table.circuits tr.board td { padding-top: 6px; border-bottom: 1px solid #8a8178; }
 .out { color: #b42318; font-weight: 600; }
