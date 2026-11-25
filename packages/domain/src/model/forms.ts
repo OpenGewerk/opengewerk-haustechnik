@@ -131,11 +131,13 @@ export function isStatedLimit(limit: unknown): limit is StatedLimit {
  * (opengewerk/opengewerk#1021).
  * Each is worked out in one unit and reads its rules by their keys in this
  * catalogue, with the unit each of them counts in; the build of the catalogue
- * asks that they are there.
+ * asks that they are there. Each says whether a value may reach it at most or
+ * has to reach it, for the mark at the head of the value.
  */
 export const workedOutLimits = {
   loop_impedance: {
     unit: 'ohms',
+    bound: 'at_most',
     rules: [
       { key: 'elektro.loop_factor_b', unit: 'factor' },
       { key: 'elektro.loop_factor_c', unit: 'factor' },
@@ -145,10 +147,12 @@ export const workedOutLimits = {
   },
   rcd_trip_current: {
     unit: 'milliamperes',
+    bound: 'at_most',
     rules: [{ key: 'elektro.rcd_trip_current_maximum', unit: 'basis_points' }],
   },
   circuit_insulation: {
     unit: 'megaohms',
+    bound: 'at_least',
     rules: [
       { key: 'elektro.insulation_minimum_up_to_500v', unit: 'kiloohms' },
       { key: 'elektro.insulation_minimum_selv_pelv', unit: 'kiloohms' },
@@ -157,6 +161,7 @@ export const workedOutLimits = {
   },
   rcd_trip_time: {
     unit: 'milliseconds',
+    bound: 'at_most',
     rules: [
       { key: 'elektro.rcd_trip_time_maximum', unit: 'milliseconds' },
       { key: 'elektro.rcd_selective_trip_time_minimum', unit: 'milliseconds' },
@@ -168,6 +173,7 @@ export const workedOutLimits = {
     string,
     {
       readonly unit: FormUnitKey
+      readonly bound: 'at_least' | 'at_most'
       readonly rules: readonly { readonly key: string; readonly unit: RuleUnit }[]
     }
   >
