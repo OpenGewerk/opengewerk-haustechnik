@@ -7,6 +7,24 @@ die Versionsnummern folgen der [Semantischen Versionierung](https://semver.org/l
 
 ## [Unreleased]
 
+### Hinzugefügt
+
+- Ein Stromkreis nennt seine Nennspannung nach Tabelle 6.1 der DIN VDE 0100-600 (bis 500 V, SELV oder PELV, über 500 V) und ob sein RCD selektiv ist; beides fragt das Formular des Fundaments seit OpenGewerk 0.9.0 (opengewerk/opengewerk#1021), und der Abgleich nimmt es an (Migration 0118). Selektiv ist nur ein RCD mit Typ. Nimmt ein Gerät den Typ weg, ohne vom selektiven RCD zu wissen, geht der mit; macht jemand den RCD selektiv, während ein anderer den Typ weggenommen hat, wird das ein Konflikt für diesen Stromkreis, und der Rest der Übertragung kommt an. Ein Stromkreis von vorher ist einer bis 500 V mit einem RCD ohne Verzögerung. Warum: Ohne die beiden Felder im Abgleich lehnte die Haustechnik eine Übertragung ab, in der das Formular des Fundaments eines davon schickt.
+
+### Geändert
+
+- Ein Grenzwert in den Protokollen über die Stromkreise steht so genau da, wie er gilt, etwa „höchstens 2,875 Ω“ statt „höchstens 2,87 Ω“; das kommt mit dem Fundament (opengewerk/opengewerk#1089). Ein schon gezeichneter Nachweis behält seine Sätze.
+- Die Dienste der Sicherung halten an wie im Fundament (#625): `backup` läuft unter einem Init, das ein Anhalten an jeden Prozess eines Laufs weitergibt, mit zwei Minuten Frist, und `backup-schedule` bekommt dieselbe Frist. Die Sperre zwischen Sicherung und Rückspielen hat ihren Pfad im Volume `backup-status`. Warum: Sonst beendete ein KILL nach zehn Sekunden jeden Lauf, der beim Anhalten länger brauchte, und ließ halbe Teile liegen.
+- Der Dienst `migrate` prüft `TRUSTED_ORIGINS` vor der ersten Änderung, wie die Anwendung beim Start (opengewerk/opengewerk#984). Der Renderer für PDFs läuft auf `browserless/chromium` 2.64.3 statt 2.62.0 und die Datenbank auf PostgreSQL 18.7, beide auf demselben Abbild wie im Fundament. Die CI prüft dazu wie das Fundament, dass eine Sicht statt einer Tabelle die Sicherung anhält und nach einem halben Rückspielen weder Anwendung noch nächtliche Sicherung starten.
+
+### Behoben
+
+- Handbuch und `docs/betrieb.md` sagen beim Rückspielen, dass zuerst Anwendung und nächtliche Sicherung angehalten werden und danach `sh docker/start.sh` die Instanz wieder startet (#628). Warum: `restore.sh` nimmt der Anwendung während des Rückspielens die Anmeldung, und erst `start.sh` gibt sie zurück; nach der alten Anleitung blieb die Anwendung ausgesperrt.
+
+### Sicherheit
+
+- Das Fundament steht auf dem Stand von OpenGewerk 0.9.0 (Submodul von 0.8.0 angehoben). Es bringt die beiden Korrekturen an Sicherung und Rückspielen mit, die eine kompromittierte Anwendung hätte nutzen können: `restore.sh` leert und füllt den Dateispeicher als dessen Eigentümer statt als root, und eine Sicherung bringt keinen fremden Inhalt mehr in den Speicher, wenn eine Datei im falschen Moment gegen einen Link oder eine Pipe getauscht wird (GHSA-h3xf-xrr5-29ww, GHSA-pgxv-37gm-36g9 in OpenGewerk). Dafür hat der Dienst `backup` jetzt die Capabilities `KILL`, `SETGID` und `SETUID`. Dazu kommen die übrigen Änderungen des Fundaments aus 0.9.0, etwa am Abgleich, am Postausgang und an den Formularen, und Migration 0118 mit den Tabellen `instance_updates` und `update_notices`, die die Haustechnik hält, aber noch nicht schreibt.
+
 ## [0.2.7] - 2026-11-17
 
 Eine Sicherheitsfassung. Das Fundament steht auf dem Stand von OpenGewerk 0.8.0 und bringt dessen acht Korrekturen

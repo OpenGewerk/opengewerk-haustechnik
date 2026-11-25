@@ -18,13 +18,22 @@ Ein Update ist derselbe Befehl, nach `git pull` und `git submodule update --init
 
 **Dateien und PDFs.** Was ein Betreiber ablegt, liegt im Dateispeicher, einem eigenen Volume (`files`), unter der Prüfsumme seines Inhalts; die Datenbank hält dazu je Betreiber eine Zeile. Jede Sicherung nimmt Datenbank und Dateispeicher zusammen mit, und das Rückspielen prüft jede Datei gegen ihren Namen. Ein PDF druckt der Renderer, ein Chromium in einem eigenen Container, auf derselben festen Fassung wie im Fundament. Er hängt in einem eigenen, internen Netz allein mit der Anwendung und erreicht weder die Datenbank noch das Internet (opengewerk#686). Er startet von Haus aus mit, weil die Vorlage `COMPOSE_PROFILES=renderer` setzt, und braucht rund 340 MB Arbeitsspeicher und knapp 4 GB auf der Platte. Wer nie ein PDF braucht, schaltet ihn in `docker/.env` mit einem leeren `COMPOSE_PROFILES=` ab; alles andere läuft dann weiter, und wer ein PDF verlangt, bekommt einen Satz, der das sagt. Eine Installation von vor dem Renderer bekommt seine beiden Zeilen beim nächsten `sh docker/start.sh` in ihre `.env`. Die Bytes einer Datei, auf die kein Betreiber mehr verweist und die seit einem Tag niemand abgelegt hat, nimmt die Anwendung einmal am Tag aus dem Speicher, dazu Reste abgebrochener Schreibvorgänge (opengewerk#657); eine Sicherung, die eine solche Datei noch enthält, bringt sie mit ihrer Zeile zurück, und eine ohne Zeile geht am nächsten Tag wieder. Eine geschlossene Instanz räumt nicht auf.
 
-Die Sicherung läuft jede Nacht von selbst, zu der Uhrzeit, die der Bereich der Instanz festlegt, und holt eine verpasste nach. Von Hand, etwa vor einem Update, und zum Rückspielen:
+Die Sicherung läuft jede Nacht von selbst, zu der Uhrzeit, die der Bereich der Instanz festlegt, und holt eine verpasste nach. Von Hand sichern, etwa vor einem Update, und eine Sicherung prüfen:
 
 ```bash
 docker compose -f docker/compose.yaml --profile backup run --rm backup backup.sh
-docker compose -f docker/compose.yaml --profile backup run --rm backup restore.sh latest
 docker compose -f docker/compose.yaml --profile backup run --rm backup verify.sh latest
 ```
+
+Zum Rückspielen werden zuerst die Anwendung und die nächtliche Sicherung angehalten, dann wird zurückgespielt, und erst wenn beides ohne Fehler durchlief, startet `sh docker/start.sh` die Instanz wieder (#628). Das führt wie nach einem Update die Migrationen aus, falls die Sicherung von einer älteren Fassung stammt, und gibt der Anwendung die Anmeldung zurück, die `restore.sh` ihr für die Dauer des Rückspielens nimmt:
+
+```bash
+docker compose -f docker/compose.yaml stop app backup-schedule &&
+  docker compose -f docker/compose.yaml --profile backup run --rm backup restore.sh latest &&
+  sh docker/start.sh
+```
+
+Bleibt ein Rückspielen auf halbem Weg stehen, startet `sh docker/start.sh` weder die Anwendung noch die nächtliche Sicherung und sagt das, und eine Sicherung von Hand lehnt `backup.sh` ebenso ab, damit kein halber Stand zur neuesten Sicherung wird. Dann die Ursache beheben und die Sicherung noch einmal zurückspielen.
 
 Wie ein Archiv verschlüsselt wird und wohin es gehört, steht in `docker/.env.example`. Die Archive heißen nach der Datenbank (`haustechnik-<zeit>.tar.gz`), ein Ziel lässt sich also mit einer Installation von OpenGewerk teilen: jede Anwendung findet, behält und löscht nur ihre eigenen. Das gilt auch für ein Archiv, das statt `latest` mit seinem Namen genannt wird: eines der anderen Anwendung lehnen `restore.sh` und `verify.sh` ab, bevor sie die Datenbank fragen.
 
