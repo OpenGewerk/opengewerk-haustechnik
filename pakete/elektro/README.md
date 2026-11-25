@@ -105,8 +105,8 @@ Die Formulare mit den Messungen je Stromkreis, seit der Fassung 1.3.0:
 - `installation_initial_test`: Erstprüfung der elektrischen Anlage nach DIN VDE 0100-600 mit
   Besichtigen, Erproben und Messen
 - `installation_test`: wiederkehrende Prüfung der elektrischen Anlage nach DGUV Vorschrift 3 oder 4
-  mit DIN VDE 0105-100, in Fassung 1 mit denselben Messungen, in Fassung 2 mit der Isolation mit
-  und ohne Verbraucher und der Umgebung je Stromkreis
+  mit DIN VDE 0105-100, in Fassung 1 und 2 mit denselben Messungen, ab Fassung 3 mit der Isolation
+  mit und ohne Verbraucher und der Umgebung je Stromkreis
 
 Ihre Gruppe "Messen je Stromkreis" hat einen Block für jeden Stromkreis der Anlage aus dem
 Stromkreisverzeichnis und keinen weiteren: Schutzleiter RPE, Isolationswiderstand Riso,
@@ -118,7 +118,7 @@ Isolationswiderstand mindestens 1 MΩ, die Auslösezeit höchstens 300 ms. Seit 
 kommen auch sie aus dem Stromkreis: die Isolation nach seiner Nennspannung nach Tabelle 6.1 der
 DIN VDE 0100-600 (SELV und PELV mindestens 0,5 MΩ, sonst 1 MΩ), die Auslösezeit nach der Art seines
 RCD (selektiv 130 bis 500 ms, sonst höchstens 300 ms). Die wiederkehrende Prüfung misst die Isolation
-in Fassung 2 mit und ohne Verbraucher und beurteilt sie wie OpenGewerk nach Tabelle 11 der DGUV
+in Fassung 3 mit und ohne Verbraucher und beurteilt sie wie OpenGewerk nach Tabelle 11 der DGUV
 Information 203-072 (#630): je Volt der Nennspannung im Kopf des Protokolls (ohne Angabe 230 V) und
 nach der Umgebung im Block, trocken oder feucht, im IT-System 50 Ω je Volt, bei SELV und PELV
 mindestens 0,25 MΩ, über 500 V ohne Grenzwert. Die

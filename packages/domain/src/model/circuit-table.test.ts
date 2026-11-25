@@ -114,6 +114,9 @@ describe('the table of the measurements on circuits (#350)', () => {
 
   it('names a column by the symbol its label ends with', () => {
     expect(symbolOf('Durchgängigkeit des Schutzleiters RPE')).toBe('RPE')
+    // What follows the symbol with "ohne" or "mit" stays (#630).
+    expect(symbolOf('Isolationswiderstand Riso ohne Verbraucher')).toBe('Riso ohne Verbraucher')
+    expect(symbolOf('Isolationswiderstand Riso mit Verbrauchern')).toBe('Riso mit Verbrauchern')
   })
 
   it('has a column for each measured value, and the limit beside the loop impedance', () => {
@@ -257,7 +260,7 @@ describe('the table of the measurements on circuits (#350)', () => {
             within: false,
             bound: 'mindestens 0,230 MΩ',
           },
-          { workedOut: 'recurring_insulation_without_loads' },
+          { workedOut: 'recurring_insulation_without_loads', remark: 'Zweimal gemessen' },
         ),
         measured(
           'c-f2',
@@ -275,7 +278,15 @@ describe('the table of the measurements on circuits (#350)', () => {
       circuits,
     )
 
-    expect(table?.columns.map((column) => column.withLimit)).toEqual([true, true])
+    expect(table?.columns.map((column) => [column.symbol, column.withLimit])).toEqual([
+      ['Riso ohne Verbraucher', true],
+      ['Riso mit Verbrauchern', true],
+    ])
+    expect(table?.limits).toEqual([
+      'Riso ohne Verbraucher nach Tabelle 11 der DGUV Information 203-072, je Volt der Nennspannung und nach Umgebung und Netzform (DGUV Information 203-072, Tabelle 11)',
+      'Riso mit Verbrauchern nach Tabelle 11 der DGUV Information 203-072, je Volt der Nennspannung und nach Umgebung und Netzform (DGUV Information 203-072, Tabelle 11)',
+    ])
+    expect(table?.boards[0]?.rows[1]?.remarks).toBe('Riso ohne Verbraucher: Zweimal gemessen')
     expect(table?.boards[0]?.rows[1]?.values).toEqual([
       { figure: '0,200', outside: true, limit: '≥ 0,230' },
       { figure: '0,100', outside: false, limit: '≥ 0,069' },

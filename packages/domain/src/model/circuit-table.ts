@@ -85,10 +85,16 @@ export function onACircuit(answer: StatedAnswer, circuits: readonly StatedCircui
 
 /**
  * The symbol a label ends with, `RPE` of "Durchgängigkeit des Schutzleiters
- * RPE", as a table of measurements names a column.
+ * RPE", as a table of measurements names a column. A label that goes on
+ * after its symbol with "ohne" or "mit" keeps that part, so that the two ways
+ * of measuring the insulation of the recurring test stay apart (#630):
+ * "Riso ohne Verbraucher", as OpenGewerk heads its columns.
  */
 export function symbolOf(label: string): string {
-  return label.trim().split(/\s+/).at(-1) ?? label
+  const words = label.trim().split(/\s+/)
+  const how = words.findIndex((word, at) => at > 1 && (word === 'ohne' || word === 'mit'))
+
+  return how > 0 ? words.slice(how - 1).join(' ') : (words.at(-1) ?? label)
 }
 
 /** A measured value in words, split into its figure and its unit: "0,42 Ω". */

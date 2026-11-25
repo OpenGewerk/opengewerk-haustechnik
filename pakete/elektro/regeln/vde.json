@@ -119,7 +119,7 @@
       "value": 250,
       "source": "DGUV Information 203-072:2021-04, Tabelle 11, Wiederholungsprüfung nach DIN VDE 0105-100/A1 (VDE 0105-100/A1):2017-06",
       "origin": "private_standard",
-      "note": "SELV und PELV in der wiederkehrenden Prüfung: Isolationswiderstand mindestens 0,25 MΩ. Ab Fassung 2 der wiederkehrenden Prüfung der Anlage (#630)."
+      "note": "SELV und PELV in der wiederkehrenden Prüfung: Isolationswiderstand mindestens 0,25 MΩ. Ab Fassung 3 der wiederkehrenden Prüfung der Anlage (#630)."
     },
     {
       "key": "insulation_recurring_per_volt_without_loads_dry",
@@ -129,7 +129,7 @@
       "value": 1000,
       "source": "DGUV Information 203-072:2021-04, Tabelle 11, Wiederholungsprüfung nach DIN VDE 0105-100/A1 (VDE 0105-100/A1):2017-06",
       "origin": "private_standard",
-      "note": "Ohne Verbraucher in trockener Umgebung: mindestens 1000 Ω je Volt der Nennspannung. Ab Fassung 2 der wiederkehrenden Prüfung der Anlage (#630)."
+      "note": "Ohne Verbraucher in trockener Umgebung: mindestens 1000 Ω je Volt der Nennspannung. Ab Fassung 3 der wiederkehrenden Prüfung der Anlage (#630)."
     },
     {
       "key": "insulation_recurring_per_volt_without_loads_damp",
@@ -139,7 +139,7 @@
       "value": 500,
       "source": "DGUV Information 203-072:2021-04, Tabelle 11, Wiederholungsprüfung nach DIN VDE 0105-100/A1 (VDE 0105-100/A1):2017-06",
       "origin": "private_standard",
-      "note": "Ohne Verbraucher in feuchter Umgebung: mindestens 500 Ω je Volt der Nennspannung. Ab Fassung 2 der wiederkehrenden Prüfung der Anlage (#630)."
+      "note": "Ohne Verbraucher in feuchter Umgebung: mindestens 500 Ω je Volt der Nennspannung. Ab Fassung 3 der wiederkehrenden Prüfung der Anlage (#630)."
     },
     {
       "key": "insulation_recurring_per_volt_with_loads_dry",
@@ -149,7 +149,7 @@
       "value": 300,
       "source": "DGUV Information 203-072:2021-04, Tabelle 11, Wiederholungsprüfung nach DIN VDE 0105-100/A1 (VDE 0105-100/A1):2017-06",
       "origin": "private_standard",
-      "note": "Mit Verbrauchern in trockener Umgebung: mindestens 300 Ω je Volt der Nennspannung. Ab Fassung 2 der wiederkehrenden Prüfung der Anlage (#630)."
+      "note": "Mit Verbrauchern in trockener Umgebung: mindestens 300 Ω je Volt der Nennspannung. Ab Fassung 3 der wiederkehrenden Prüfung der Anlage (#630)."
     },
     {
       "key": "insulation_recurring_per_volt_with_loads_damp",
@@ -159,7 +159,7 @@
       "value": 150,
       "source": "DGUV Information 203-072:2021-04, Tabelle 11, Wiederholungsprüfung nach DIN VDE 0105-100/A1 (VDE 0105-100/A1):2017-06",
       "origin": "private_standard",
-      "note": "Mit Verbrauchern in feuchter Umgebung: mindestens 150 Ω je Volt der Nennspannung. Ab Fassung 2 der wiederkehrenden Prüfung der Anlage (#630)."
+      "note": "Mit Verbrauchern in feuchter Umgebung: mindestens 150 Ω je Volt der Nennspannung. Ab Fassung 3 der wiederkehrenden Prüfung der Anlage (#630)."
     },
     {
       "key": "insulation_recurring_per_volt_it",
@@ -169,7 +169,7 @@
       "value": 50,
       "source": "DGUV Information 203-072:2021-04, Tabelle 11, Wiederholungsprüfung nach DIN VDE 0105-100/A1 (VDE 0105-100/A1):2017-06",
       "origin": "private_standard",
-      "note": "Im IT-System: mindestens 50 Ω je Volt der Nennspannung, mit und ohne Verbraucher. Ab Fassung 2 der wiederkehrenden Prüfung der Anlage (#630)."
+      "note": "Im IT-System: mindestens 50 Ω je Volt der Nennspannung, mit und ohne Verbraucher. Ab Fassung 3 der wiederkehrenden Prüfung der Anlage (#630)."
     }
   ]
 }

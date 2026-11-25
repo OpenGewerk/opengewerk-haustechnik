@@ -299,9 +299,9 @@ export const workedOutLimitWords: Readonly<Record<WorkedOutLimitKind, string>> =
   circuit_insulation: 'nach der Nennspannung',
   rcd_trip_time: 'nach der Art des RCD, selektiv oder ohne Verzögerung',
   recurring_insulation_without_loads:
-    'ohne Verbraucher nach Tabelle 11 der DGUV Information 203-072, je Volt der Nennspannung und nach Umgebung und Netzform',
+    'nach Tabelle 11 der DGUV Information 203-072, je Volt der Nennspannung und nach Umgebung und Netzform',
   recurring_insulation_with_loads:
-    'mit Verbrauchern nach Tabelle 11 der DGUV Information 203-072, je Volt der Nennspannung und nach Umgebung und Netzform',
+    'nach Tabelle 11 der DGUV Information 203-072, je Volt der Nennspannung und nach Umgebung und Netzform',
 }
 
 /** An asset an answer is about, as an evidence keeps it: its number and its name. */

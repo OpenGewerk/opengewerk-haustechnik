@@ -42,15 +42,6 @@
               "label": "IT"
             }
           ]
-        },
-        {
-          "kind": "number",
-          "key": "nominal_voltage",
-          "label": "Nennspannung",
-          "carry": true,
-          "hint": "Danach richtet sich der Mindestwert der Isolation je Volt nach Tabelle 11 der DGUV Information 203-072; ohne Angabe gelten 230 V.",
-          "unit": "volts",
-          "decimals": 0
         }
       ]
     },
@@ -118,22 +109,6 @@
           "repeat": "circuits",
           "fields": [
             {
-              "kind": "choice",
-              "key": "environment",
-              "label": "Umgebung",
-              "hint": "Danach richtet sich der Mindestwert der Isolation nach Tabelle 11 der DGUV Information 203-072.",
-              "options": [
-                {
-                  "value": "dry",
-                  "label": "trocken"
-                },
-                {
-                  "value": "damp",
-                  "label": "feucht"
-                }
-              ]
-            },
-            {
               "kind": "measurement",
               "key": "protective_conductor",
               "label": "Durchgängigkeit des Schutzleiters RPE",
@@ -142,22 +117,12 @@
             },
             {
               "kind": "measurement",
-              "key": "insulation_without_loads",
-              "label": "Isolationswiderstand Riso ohne Verbraucher",
+              "key": "insulation_resistance",
+              "label": "Isolationswiderstand Riso",
               "unit": "megaohms",
-              "decimals": 3,
+              "decimals": 2,
               "limit": {
-                "kind": "recurring_insulation_without_loads"
-              }
-            },
-            {
-              "kind": "measurement",
-              "key": "insulation_with_loads",
-              "label": "Isolationswiderstand Riso mit Verbrauchern",
-              "unit": "megaohms",
-              "decimals": 3,
-              "limit": {
-                "kind": "recurring_insulation_with_loads"
+                "kind": "circuit_insulation"
               }
             },
             {

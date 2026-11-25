@@ -320,7 +320,10 @@ describe('the package Elektro', () => {
       }
       const unusual = { ...circuit, voltageClass: 'selv_pelv', rcdSelective: true }
 
-      expect(catalogue.form(key, today)?.version, key).toBe(2)
+      // The recurring test judges the insulation after table 11 since version 3 (#630).
+      expect(catalogue.form(key, today)?.version, key).toBe(
+        key === 'elektro.installation_test' ? 3 : 2,
+      )
       expect(
         [
           judged('rcd_trip_time', 400_000, unusual),
