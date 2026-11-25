@@ -244,6 +244,44 @@ describe('the table of the measurements on circuits (#350)', () => {
     ])
   })
 
+  it('gives the limit of each circuit beside both values of the insulation of the recurring test (#630)', () => {
+    const [table] = circuitTablesOf(
+      [
+        measured(
+          'c-f2',
+          'Isolationswiderstand Riso ohne Verbraucher',
+          '0,200 MΩ',
+          {
+            text: 'Außerhalb des Grenzwerts, mindestens 0,230 MΩ.',
+            source: 'DGUV Information 203-072, Tabelle 11',
+            within: false,
+            bound: 'mindestens 0,230 MΩ',
+          },
+          { workedOut: 'recurring_insulation_without_loads' },
+        ),
+        measured(
+          'c-f2',
+          'Isolationswiderstand Riso mit Verbrauchern',
+          '0,100 MΩ',
+          {
+            text: 'Innerhalb des Grenzwerts, mindestens 0,069 MΩ.',
+            source: 'DGUV Information 203-072, Tabelle 11',
+            within: true,
+            bound: 'mindestens 0,069 MΩ',
+          },
+          { workedOut: 'recurring_insulation_with_loads' },
+        ),
+      ],
+      circuits,
+    )
+
+    expect(table?.columns.map((column) => column.withLimit)).toEqual([true, true])
+    expect(table?.boards[0]?.rows[1]?.values).toEqual([
+      { figure: '0,200', outside: true, limit: '≥ 0,230' },
+      { figure: '0,100', outside: false, limit: '≥ 0,069' },
+    ])
+  })
+
   it('has no table where no answer stands in the block of a circuit', () => {
     expect(circuitTablesOf(answers.slice(0, 1), circuits)).toEqual([])
   })

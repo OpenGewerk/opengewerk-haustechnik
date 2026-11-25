@@ -200,6 +200,8 @@ function limitsOf(answers: readonly StatedAnswer[], columns: readonly CircuitCol
 const limitPerCircuit: ReadonlySet<WorkedOutLimitKind> = new Set([
   'loop_impedance',
   'circuit_insulation',
+  'recurring_insulation_without_loads',
+  'recurring_insulation_with_loads',
   'rcd_trip_time',
 ])
 

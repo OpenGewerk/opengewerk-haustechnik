@@ -2,6 +2,7 @@ import {
   type BlockField,
   type FilledAnswer,
   type GroupField,
+  type MeasurementField,
   ruleSet,
 } from '@opengewerk/haustechnik-domain'
 import { today } from '@opengewerk/platform-web/format'
@@ -16,6 +17,7 @@ import {
   pointKey,
   pointsOf,
   pointState,
+  pointVerdict,
   saveAnswer,
 } from './answers.js'
 
@@ -254,5 +256,78 @@ describe('an answer in the block of a circuit (#350)', () => {
         made: [],
       })
     }
+  })
+})
+
+describe('a value in the block of a circuit on site, with the conditions of its activity (#630)', () => {
+  const field: MeasurementField = {
+    kind: 'measurement',
+    key: 'insulation_without_loads',
+    label: 'Isolationswiderstand Riso ohne Verbraucher',
+    unit: 'megaohms',
+    decimals: 3,
+    limit: { kind: 'recurring_insulation_without_loads' },
+  }
+  const group: GroupField = {
+    kind: 'group',
+    key: 'circuits',
+    label: 'Messen je Stromkreis',
+    repeat: 'circuits',
+    fields: [field],
+  }
+  const point = {
+    key: pointKey(group.key, 'c-1', field.key),
+    section: { key: 'measurements', title: 'Messen', fields: [group] },
+    group,
+    blockKey: 'c-1',
+    block: 1,
+    field,
+    assetId: null,
+  }
+  const rules = ruleSet(
+    [
+      ['elektro.loop_nominal_voltage', 'volts', 230],
+      ['elektro.insulation_recurring_per_volt_without_loads_dry', 'factor', 1_000],
+      ['elektro.insulation_recurring_per_volt_it', 'factor', 50],
+    ].map(([key, unit, value]) => ({
+      key: key as string,
+      validFrom: '2017-06-01' as const,
+      validUntil: null,
+      unit: unit as 'factor',
+      value: value as number,
+      source: 'DGUV Information 203-072, Tabelle 11',
+    })),
+  )
+  const circuit = {
+    id: 'c-1',
+    designation: 'F1',
+    consumer: null,
+    tripCharacteristic: null,
+    ratedCurrentMilli: null,
+    ratedResidualCurrentMilli: null,
+    board: 'UV 1',
+    place: 0,
+  }
+  const verdictWith = (answered: readonly FilledAnswer[]) =>
+    pointVerdict(
+      point,
+      { value: '20', result: null, remark: null, attachmentId: null },
+      { rules, on: '2026-10-19', circuits: [circuit], answered },
+    )
+
+  it('judges it by the earthing system the head of the activity names', () => {
+    const it: FilledAnswer = {
+      groupKey: null,
+      blockKey: null,
+      fieldKey: 'earthing_system',
+      value: '"it"',
+      result: null,
+      remark: null,
+      attachmentId: null,
+    }
+
+    // 0,020 MΩ: outside the 0,230 MΩ of a TN system, within the 0,012 MΩ of an IT system.
+    expect(verdictWith([]).within).toBe(false)
+    expect(verdictWith([it]).within).toBe(true)
   })
 })

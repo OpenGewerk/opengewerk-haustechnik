@@ -58,6 +58,9 @@ export const formUnits = {
   milliamperes: { sign: 'mA' },
   kilograms: { sign: 'kg' },
   milliseconds: { sign: 'ms', fromRule: { milliseconds: 1000 } },
+  // The nominal voltage the head of the recurring test of an installation
+  // names (#630), without a limit.
+  volts: { sign: 'V' },
 } as const satisfies Readonly<Record<string, FormUnit>>
 
 export type FormUnitKey = keyof typeof formUnits
@@ -128,7 +131,9 @@ export function isStatedLimit(limit: unknown): limit is StatedLimit {
  * of the circuit, the tripping current from its rated residual current, and
  * since version 2 of both tests of the installation the insulation from its
  * nominal voltage and the tripping time from whether its RCD is selective
- * (opengewerk/opengewerk#1021).
+ * (opengewerk/opengewerk#1021), and in the recurring test the insulation with
+ * and without the loads after table 11 of the DGUV Information 203-072
+ * (#630, opengewerk/opengewerk#1022).
  * Each is worked out in one unit and reads its rules by their keys in this
  * catalogue, with the unit each of them counts in; the build of the catalogue
  * asks that they are there. Each says whether a value may reach it at most or
@@ -157,6 +162,28 @@ export const workedOutLimits = {
       { key: 'elektro.insulation_minimum_up_to_500v', unit: 'kiloohms' },
       { key: 'elektro.insulation_minimum_selv_pelv', unit: 'kiloohms' },
       { key: 'elektro.insulation_minimum_above_500v', unit: 'kiloohms' },
+    ],
+  },
+  recurring_insulation_without_loads: {
+    unit: 'megaohms',
+    bound: 'at_least',
+    rules: [
+      { key: 'elektro.insulation_recurring_selv_pelv', unit: 'kiloohms' },
+      { key: 'elektro.insulation_recurring_per_volt_without_loads_dry', unit: 'factor' },
+      { key: 'elektro.insulation_recurring_per_volt_without_loads_damp', unit: 'factor' },
+      { key: 'elektro.insulation_recurring_per_volt_it', unit: 'factor' },
+      { key: 'elektro.loop_nominal_voltage', unit: 'volts' },
+    ],
+  },
+  recurring_insulation_with_loads: {
+    unit: 'megaohms',
+    bound: 'at_least',
+    rules: [
+      { key: 'elektro.insulation_recurring_selv_pelv', unit: 'kiloohms' },
+      { key: 'elektro.insulation_recurring_per_volt_with_loads_dry', unit: 'factor' },
+      { key: 'elektro.insulation_recurring_per_volt_with_loads_damp', unit: 'factor' },
+      { key: 'elektro.insulation_recurring_per_volt_it', unit: 'factor' },
+      { key: 'elektro.loop_nominal_voltage', unit: 'volts' },
     ],
   },
   rcd_trip_time: {
@@ -211,6 +238,23 @@ function asFoundationNames(rules: RuleSet): RuleSet {
 /** The circuit a block is about, as far as its limits ask for it. */
 function factsOf(item: unknown): CircuitFacts | null {
   return typeof item === 'object' && item !== null ? (item as CircuitFacts) : null
+}
+
+/**
+ * Where and how a circuit was measured beside what its chart says (#630, as
+ * opengewerk/opengewerk#1022): the environment its block names, dry or damp,
+ * and the earthing system and the nominal voltage in the head of the
+ * protocol, the voltage in thousandths of a volt as an answer keeps it. A
+ * block without them is a dry circuit in a TN or TT system at 230 V.
+ */
+export interface MeasuringConditions {
+  readonly environment?: 'dry' | 'damp'
+  readonly earthingSystem?: string
+  readonly nominalVoltageMilli?: number
+}
+
+function conditionsOf(item: unknown): MeasuringConditions | null {
+  return typeof item === 'object' && item !== null ? (item as MeasuringConditions) : null
 }
 
 /** The rule of the least insulation resistance after Table 6.1 of DIN VDE 0100-600, by nominal voltage. */
@@ -274,6 +318,65 @@ export const circuitTripTime: LimitCalculator<FormTerms> = (_field, { rules, on,
     ? { limitMilli: most.value * 1000, atLeast: false, source: most.source }
     : noLimitThatDay
 }
+
+/**
+ * The least insulation resistance of the recurring test after table 11 of
+ * the DGUV Information 203-072 (#630, as opengewerk/opengewerk#1022), with or
+ * without the loads: 0,25 MΩ for SELV and PELV, in an IT system 50 Ω per
+ * volt, and otherwise per volt by the environment, dry or damp. Per volt is
+ * of the nominal voltage the protocol names, and without one of U0 = 230 V,
+ * rounded up to whole kiloohms so that it is never looser. A circuit above
+ * 500 V counts per volt of its own nominal voltage, which the chart does not
+ * name, and the protocol says so rather than judge it by another.
+ */
+function recurringInsulation(loads: 'with_loads' | 'without_loads'): LimitCalculator<FormTerms> {
+  return (_field, { rules, on, item }) => {
+    const voltageClass = factsOf(item)?.voltageClass ?? 'up_to_500'
+    const conditions = conditionsOf(item)
+
+    if (voltageClass === 'above_500') {
+      return {
+        none: 'Über 500 V gilt der Mindestwert je Volt der Nennspannung des Stromkreises, und die nennt das Stromkreisverzeichnis nicht.',
+      }
+    }
+
+    if (voltageClass === 'selv_pelv') {
+      const rule = rules.at('elektro.insulation_recurring_selv_pelv', on)
+
+      // Kiloohms are thousandths of the megaohms the field is measured in.
+      return rule ? { limitMilli: rule.value, atLeast: true, source: rule.source } : noLimitThatDay
+    }
+
+    const environment = conditions?.environment === 'damp' ? 'damp' : 'dry'
+    const perVolt = rules.at(
+      conditions?.earthingSystem === 'it'
+        ? 'elektro.insulation_recurring_per_volt_it'
+        : `elektro.insulation_recurring_per_volt_${loads}_${environment}`,
+      on,
+    )
+    const ordinary = rules.at('elektro.loop_nominal_voltage', on)
+    const voltageMilli =
+      conditions?.nominalVoltageMilli ?? (ordinary ? ordinary.value * 1000 : undefined)
+
+    if (!perVolt || voltageMilli === undefined) {
+      return noLimitThatDay
+    }
+
+    // Ohms per volt times thousandths of a volt are thousandths of an ohm, and
+    // a thousandth of a megaohm, as the field counts, is a kiloohm.
+    return {
+      limitMilli: Math.ceil((perVolt.value * voltageMilli) / 1_000_000),
+      atLeast: true,
+      source: perVolt.source,
+    }
+  }
+}
+
+/** The insulation of the recurring test without the loads connected (#630). */
+export const recurringInsulationWithoutLoads = recurringInsulation('without_loads')
+
+/** The insulation of the recurring test with the loads connected and switched on (#630). */
+export const recurringInsulationWithLoads = recurringInsulation('with_loads')
 
 /** A calculator of the foundation, handed the rules of this catalogue under the names it asks for. */
 function withCatalogueRules(calculator: LimitCalculator): LimitCalculator<FormTerms> {
@@ -354,6 +457,8 @@ export const forms = formEngine<FormTerms>({
     loop_impedance: withCatalogueRules(loopImpedance),
     rcd_trip_current: withCatalogueRules(residualTripCurrent),
     circuit_insulation: circuitInsulation,
+    recurring_insulation_without_loads: recurringInsulationWithoutLoads,
+    recurring_insulation_with_loads: recurringInsulationWithLoads,
     rcd_trip_time: circuitTripTime,
   },
   kinds: fieldKinds,

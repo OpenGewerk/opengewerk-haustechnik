@@ -31,6 +31,7 @@ import {
   forms,
   type GroupField,
   type MeasurementField,
+  type MeasuringConditions,
   type WorkedOutLimitKind,
   workedOutLimits,
 } from './forms.js'
@@ -714,6 +715,13 @@ export interface AnswersContext extends LimitContext {
   readonly pointAssets?: PointAssets | null
   readonly assetName?: (id: string) => string | null
   readonly circuits?: readonly AnswerCircuit[] | null
+  /**
+   * Every answer of the activity, for the conditions a circuit was measured
+   * in (#630): the environment in its block, the earthing system and the
+   * nominal voltage in the head. Without them a block is judged dry, in a
+   * TN or TT system at 230 V.
+   */
+  readonly answered?: readonly FilledAnswer[] | null
 }
 
 /** An asset of a point for every asset in words: its name, or its place among the assets of the point. */
@@ -731,15 +739,59 @@ function assetWords(context: AnswersContext, fieldKey: string, asset: string): s
 export function answerVerdict(
   field: MeasurementField,
   answer: AnswerContent,
-  context: LimitContext & { readonly circuit?: CircuitFacts | null },
+  context: LimitContext & {
+    readonly circuit?: CircuitFacts | null
+    readonly conditions?: MeasuringConditions
+  },
 ): LimitVerdict {
   const value = answer.value === null ? undefined : parsed(answer.value)
+  const circuit = context.circuit ?? null
 
   return forms.limitVerdict(field, typeof value === 'number' ? value : null, {
     rules: context.rules,
     on: context.on,
-    item: context.circuit ?? null,
+    // The conditions the circuit was measured in go with it (#630).
+    item: circuit === null ? null : { ...circuit, ...context.conditions },
   })
+}
+
+/**
+ * The conditions a circuit was measured in as the answers of its activity
+ * say them (#630, as opengewerk/opengewerk#1022): the environment in the
+ * block of the circuit, the earthing system and the nominal voltage in the
+ * head of the form, where they are given and known. A form that asks for
+ * none of them gives none, and its limits judge as before. The same on the
+ * device, in the sync and in the evidence, since each reads the same answers.
+ */
+export function measuringConditionsOf(
+  answers: readonly FilledAnswer[] | null | undefined,
+  groupKey: string | null,
+  blockKey: string | null,
+): MeasuringConditions {
+  const valueOf = (fieldKey: string, inBlock: boolean): unknown => {
+    const found = (answers ?? []).find(
+      (answer) =>
+        answer.fieldKey === fieldKey &&
+        (inBlock
+          ? answer.groupKey === groupKey && answer.blockKey === blockKey
+          : answer.groupKey === null),
+    )
+
+    return found?.value === null || found === undefined ? undefined : parsed(found.value)
+  }
+  const environment = groupKey === null ? undefined : valueOf('environment', true)
+  const earthingSystem = valueOf('earthing_system', false)
+  const nominalVoltageMilli = valueOf('nominal_voltage', false)
+
+  return {
+    ...(environment === 'dry' || environment === 'damp' ? { environment } : {}),
+    ...(typeof earthingSystem === 'string' ? { earthingSystem } : {}),
+    ...(typeof nominalVoltageMilli === 'number' &&
+    Number.isInteger(nominalVoltageMilli) &&
+    nominalVoltageMilli > 0
+      ? { nominalVoltageMilli }
+      : {}),
+  }
 }
 
 /**
@@ -866,7 +918,11 @@ export function answersMissing(
 
     if (
       found?.field.kind === 'measurement' &&
-      answerVerdict(found.field, answer, { ...context, circuit }).within === false &&
+      answerVerdict(found.field, answer, {
+        ...context,
+        circuit,
+        conditions: measuringConditionsOf(answers, answer.groupKey, answer.blockKey),
+      }).within === false &&
       (answer.remark ?? '').trim() === ''
     ) {
       missing.push(
@@ -1021,7 +1077,11 @@ export function answerFindings<Answer extends FilledAnswer>(
 
     if (found.field.kind === 'measurement') {
       const field = found.field
-      const verdict = answerVerdict(field, answer, { ...context, circuit })
+      const verdict = answerVerdict(field, answer, {
+        ...context,
+        circuit,
+        conditions: measuringConditionsOf(answers, answer.groupKey, answer.blockKey),
+      })
       const value = answer.value === null ? undefined : parsed(answer.value)
 
       if (verdict.within === false && typeof value === 'number') {
@@ -1228,7 +1288,13 @@ export function statedAnswers(
     // The block of a circuit stands at the place of its circuit on the chart (#350).
     const block = circuit === null ? blockOf(answer) : circuit.place + 1
     const verdict =
-      field.kind === 'measurement' ? answerVerdict(field, answer, { ...context, circuit }) : null
+      field.kind === 'measurement'
+        ? answerVerdict(field, answer, {
+            ...context,
+            circuit,
+            conditions: measuringConditionsOf(answers, answer.groupKey, answer.blockKey),
+          })
+        : null
     const asset = assetOfAnswer(answer)
     const workedOut = field.kind === 'measurement' ? workedOutKind(field) : null
 

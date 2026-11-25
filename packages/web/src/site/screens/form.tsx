@@ -267,6 +267,8 @@ export function useActivityForm(activityId: string, opened: readonly OpenedBlock
           on: maybeText(activity, 'performedOn') ?? today(),
           pointAssets,
           circuits,
+          // For the conditions a circuit was measured in (#630).
+          answered: filled,
           assetName: (id) => {
             const asset = assets.find((candidate) => candidate['id'] === id)
 

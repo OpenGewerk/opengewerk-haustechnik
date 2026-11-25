@@ -396,23 +396,25 @@ export async function giveSampleCircuitTest(
       remark: given.remark ?? null,
     })
     const chart = await chartOfAsset(tx, planter.tenantId, installation.id)
-    // RPE, Riso, Zs, IΔ and tΔ in thousandths of their units, the circuits
-    // in the order of the chart; one without an RCD has neither of the last.
-    const measured: readonly (readonly [number, number, number, number, number])[] = [
-      [80, 480_000, 180, 0, 0],
-      [420, 520_000, 920, 21_000, 24_000],
-      [310, 350_000, 3_400, 19_000, 21_000],
+    // RPE, Riso without and with the loads (#630), Zs, IΔ and tΔ in
+    // thousandths of their units, the circuits in the order of the chart;
+    // one without an RCD has neither of the last.
+    const measured: readonly (readonly [number, number, number, number, number, number])[] = [
+      [80, 480_000, 120_000, 180, 0, 0],
+      [420, 520_000, 95_000, 920, 21_000, 24_000],
+      [310, 350_000, 60_000, 3_400, 19_000, 21_000],
     ]
     const fields = [
       'protective_conductor',
-      'insulation_resistance',
+      'insulation_without_loads',
+      'insulation_with_loads',
       'loop_impedance',
       'rcd_trip_current',
       'rcd_trip_time',
     ]
     const circuitAnswers = chart.slice(0, measured.length).flatMap((circuit, index) =>
       (measured[index] ?? []).flatMap((value, at) =>
-        at >= 3 && circuit.ratedResidualCurrentMilli === null
+        at >= 4 && circuit.ratedResidualCurrentMilli === null
           ? []
           : [
               answer(
@@ -420,7 +422,7 @@ export async function giveSampleCircuitTest(
                 {
                   value: String(value),
                   // The loop impedance of the third, outside its limit, with its remark.
-                  ...(index === 2 && at === 2
+                  ...(index === 2 && at === 3
                     ? { remark: 'Zweimal gemessen, gleicher Wert.' }
                     : {}),
                 },

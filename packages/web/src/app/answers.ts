@@ -2,6 +2,7 @@ import {
   type AnswerCircuit,
   type AnswerContent,
   type AnswersContext,
+  measuringConditionsOf,
   answerValue,
   answerVerdict,
   type BlockField,
@@ -291,6 +292,7 @@ export function pointVerdict(
   return answerVerdict(point.field, answer, {
     ...context,
     circuit: circuitOfPoint(point, context.circuits),
+    conditions: measuringConditionsOf(context.answered, point.group?.key ?? null, point.blockKey),
   })
 }
 

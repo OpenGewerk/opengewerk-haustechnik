@@ -110,6 +110,66 @@
       "source": "DIN EN 61008-1 (VDE 0664-10):2018-03, 5.3.12 mit Tabelle 1, und DIN EN 61009-1 (VDE 0664-20):2023-08, 5.3.8 mit Tabelle 2, Abschaltzeit einer selektiven Fehlerstrom-Schutzeinrichtung (S) bei IΔn",
       "origin": "private_standard",
       "note": "Eine selektive (S) schaltet bei IΔn spätestens nach 500 ms ab. Ab Fassung 2 der beiden Prüfungen der Anlage."
+    },
+    {
+      "key": "insulation_recurring_selv_pelv",
+      "validFrom": "2017-06-01",
+      "validUntil": null,
+      "unit": "kiloohms",
+      "value": 250,
+      "source": "DGUV Information 203-072:2021-04, Tabelle 11, Wiederholungsprüfung nach DIN VDE 0105-100/A1 (VDE 0105-100/A1):2017-06",
+      "origin": "private_standard",
+      "note": "SELV und PELV in der wiederkehrenden Prüfung: Isolationswiderstand mindestens 0,25 MΩ. Ab Fassung 2 der wiederkehrenden Prüfung der Anlage (#630)."
+    },
+    {
+      "key": "insulation_recurring_per_volt_without_loads_dry",
+      "validFrom": "2017-06-01",
+      "validUntil": null,
+      "unit": "factor",
+      "value": 1000,
+      "source": "DGUV Information 203-072:2021-04, Tabelle 11, Wiederholungsprüfung nach DIN VDE 0105-100/A1 (VDE 0105-100/A1):2017-06",
+      "origin": "private_standard",
+      "note": "Ohne Verbraucher in trockener Umgebung: mindestens 1000 Ω je Volt der Nennspannung. Ab Fassung 2 der wiederkehrenden Prüfung der Anlage (#630)."
+    },
+    {
+      "key": "insulation_recurring_per_volt_without_loads_damp",
+      "validFrom": "2017-06-01",
+      "validUntil": null,
+      "unit": "factor",
+      "value": 500,
+      "source": "DGUV Information 203-072:2021-04, Tabelle 11, Wiederholungsprüfung nach DIN VDE 0105-100/A1 (VDE 0105-100/A1):2017-06",
+      "origin": "private_standard",
+      "note": "Ohne Verbraucher in feuchter Umgebung: mindestens 500 Ω je Volt der Nennspannung. Ab Fassung 2 der wiederkehrenden Prüfung der Anlage (#630)."
+    },
+    {
+      "key": "insulation_recurring_per_volt_with_loads_dry",
+      "validFrom": "2017-06-01",
+      "validUntil": null,
+      "unit": "factor",
+      "value": 300,
+      "source": "DGUV Information 203-072:2021-04, Tabelle 11, Wiederholungsprüfung nach DIN VDE 0105-100/A1 (VDE 0105-100/A1):2017-06",
+      "origin": "private_standard",
+      "note": "Mit Verbrauchern in trockener Umgebung: mindestens 300 Ω je Volt der Nennspannung. Ab Fassung 2 der wiederkehrenden Prüfung der Anlage (#630)."
+    },
+    {
+      "key": "insulation_recurring_per_volt_with_loads_damp",
+      "validFrom": "2017-06-01",
+      "validUntil": null,
+      "unit": "factor",
+      "value": 150,
+      "source": "DGUV Information 203-072:2021-04, Tabelle 11, Wiederholungsprüfung nach DIN VDE 0105-100/A1 (VDE 0105-100/A1):2017-06",
+      "origin": "private_standard",
+      "note": "Mit Verbrauchern in feuchter Umgebung: mindestens 150 Ω je Volt der Nennspannung. Ab Fassung 2 der wiederkehrenden Prüfung der Anlage (#630)."
+    },
+    {
+      "key": "insulation_recurring_per_volt_it",
+      "validFrom": "2017-06-01",
+      "validUntil": null,
+      "unit": "factor",
+      "value": 50,
+      "source": "DGUV Information 203-072:2021-04, Tabelle 11, Wiederholungsprüfung nach DIN VDE 0105-100/A1 (VDE 0105-100/A1):2017-06",
+      "origin": "private_standard",
+      "note": "Im IT-System: mindestens 50 Ω je Volt der Nennspannung, mit und ohne Verbraucher. Ab Fassung 2 der wiederkehrenden Prüfung der Anlage (#630)."
     }
   ]
 }
