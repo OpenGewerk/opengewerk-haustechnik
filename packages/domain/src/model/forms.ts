@@ -331,7 +331,7 @@ export const circuitTripTime: LimitCalculator<FormTerms> = (_field, { rules, on,
  */
 function recurringInsulation(loads: 'with_loads' | 'without_loads'): LimitCalculator<FormTerms> {
   return (_field, { rules, on, item }) => {
-    const voltageClass = factsOf(item)?.voltageClass ?? 'up_to_500'
+    const voltageClass = voltageClassOf(item)
     const conditions = conditionsOf(item)
 
     if (voltageClass === 'above_500') {
