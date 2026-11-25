@@ -750,8 +750,15 @@ export function answerVerdict(
   return forms.limitVerdict(field, typeof value === 'number' ? value : null, {
     rules: context.rules,
     on: context.on,
-    // The conditions the circuit was measured in go with it (#630).
-    item: circuit === null ? null : { ...circuit, ...context.conditions },
+    // The conditions the circuit was measured in go with it (#630), and with
+    // a block whose circuit the chart no longer has as well, as in OpenGewerk:
+    // it was measured in them all the same.
+    item:
+      circuit === null
+        ? context.conditions === undefined
+          ? null
+          : { ...context.conditions }
+        : { ...circuit, ...context.conditions },
   })
 }
 

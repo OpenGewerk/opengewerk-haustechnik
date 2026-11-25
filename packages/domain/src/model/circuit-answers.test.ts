@@ -659,6 +659,21 @@ describe('the insulation of the recurring test after table 11 (#630)', () => {
     expect(findings('up_to_500')).toEqual([])
   })
 
+  it('judges a block whose circuit the chart no longer has with the conditions of the activity as well', () => {
+    // 0,020 MΩ in an IT system: within its 0,012 MΩ, where the circuit is gone as well.
+    const answers = [
+      head('earthing_system', 'it'),
+      measured('c-gone', 'insulation_without_loads', 20),
+    ]
+
+    expect(answerFindings(recurring, answers, judgedBy)).toEqual([])
+    expect(
+      answersMissing(recurring, answers, judgedBy).filter((sentence) =>
+        sentence.includes('außerhalb des Grenzwerts'),
+      ),
+    ).toEqual([])
+  })
+
   it('wants a remark at a value outside the limit of its conditions, and none within them', () => {
     const missing = (system: string) =>
       answersMissing(
