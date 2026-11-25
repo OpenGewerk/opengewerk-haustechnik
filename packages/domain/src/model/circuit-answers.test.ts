@@ -677,6 +677,20 @@ describe('the insulation of the recurring test after table 11 (#630)', () => {
     expect(verdict(690_000, 'selv_pelv')).toMatchObject({ within: false, limitMilli: 250 })
   })
 
+  it('judges by the nominal voltage the head of the protocol is answered with', () => {
+    // 0,300 MΩ: within the 0,230 MΩ at 230 V, outside the 0,400 MΩ at 400 V, none above 500 V.
+    const findings = (voltage: readonly ReturnType<typeof head>[]) =>
+      answerFindings(
+        recurring,
+        [...voltage, measured(lighting.id, 'insulation_without_loads', 300)],
+        judgedBy,
+      )
+
+    expect(findings([])).toEqual([])
+    expect(findings([head('nominal_voltage', 400_000)])).toHaveLength(1)
+    expect(findings([head('nominal_voltage', 690_000)])).toEqual([])
+  })
+
   it('judges a block whose circuit the chart no longer has with the conditions of the activity as well', () => {
     // 0,020 MΩ in an IT system: within its 0,012 MΩ, where the circuit is gone as well.
     const answers = [
