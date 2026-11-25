@@ -163,19 +163,21 @@ function remarksOf(said: readonly StatedAnswer[]): string {
 }
 
 /**
- * Why a limit worked out of the circuit can be missing in a row, as far as
- * the frozen state tells: for the insulation of the recurring test a circuit
- * above 500 V (#630), whose nominal voltage the chart does not name, else
- * what protects the circuit, and either way a day before its rules began,
- * which the state does not keep apart from the first.
+ * Why a limit worked out of the circuit can be missing in a row: each reason
+ * its calculator has, and for every kind a day before its rules began. The
+ * frozen state does not say which one it was, so the legend names them all
+ * and none that cannot be: the loop impedance needs a breaker B, C or D with
+ * its rated current, the tripping current a rated residual current, and the
+ * insulation of the recurring test has none above 500 V (#630).
  */
-function missingBecause(kind: WorkedOutLimitKind): string {
-  const first =
-    kind === 'recurring_insulation_without_loads' || kind === 'recurring_insulation_with_loads'
-      ? 'über 500 V'
-      : 'ohne Angaben zur Schutzeinrichtung'
-
-  return `${first} oder ohne Regel am Tag der Prüfung`
+const missingBecause: Readonly<Record<WorkedOutLimitKind, string>> = {
+  loop_impedance:
+    'ohne Leitungsschutzschalter B, C oder D mit Nennstrom oder ohne Regel am Tag der Prüfung',
+  rcd_trip_current: 'ohne Bemessungsdifferenzstrom oder ohne Regel am Tag der Prüfung',
+  circuit_insulation: 'ohne Regel am Tag der Prüfung',
+  rcd_trip_time: 'ohne Regel am Tag der Prüfung',
+  recurring_insulation_without_loads: 'über 500 V oder ohne Regel am Tag der Prüfung',
+  recurring_insulation_with_loads: 'über 500 V oder ohne Regel am Tag der Prüfung',
 }
 
 /** Where the limit of each column comes from, with its sources (`CircuitTable.limits`). */
@@ -200,7 +202,7 @@ function limitsOf(answers: readonly StatedAnswer[], columns: readonly CircuitCol
       limited.push(`${column.symbol} ${workedOutLimitWords[column.workedOut]}${from}`)
 
       if (ofColumn.some((answer) => answer.limit === null)) {
-        const because = missingBecause(column.workedOut)
+        const because = missingBecause[column.workedOut]
 
         without.set(because, [...(without.get(because) ?? []), column.symbol])
       }

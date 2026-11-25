@@ -190,7 +190,7 @@ describe('the PDF of an evidence measured on circuits (#350)', () => {
     expect(html).toContain('<td class="muted protection">nicht erfasst</td>')
     expect(html).toContain('<td class="figure">0,88</td><td class="figure muted">keiner</td>')
     expect(html).toContain(
-      'ohne Angaben zur Schutzeinrichtung oder ohne Regel am Tag der Prüfung keiner für Zs.',
+      'ohne Leitungsschutzschalter B, C oder D mit Nennstrom oder ohne Regel am Tag der Prüfung keiner für Zs.',
     )
     // A check point of the circuit not in order stands with its remark.
     expect(html).toContain('Stromkreis in Ordnung: nicht in Ordnung, Klemme lose')

@@ -175,7 +175,7 @@ describe('the table of the measurements on circuits (#350)', () => {
       `Zs aus Charakteristik und Nennstrom (${zsSource})`,
       'Riso mindestens 1,00 MΩ (DIN VDE 0100-600)',
       'RPE ohne Grenzwert',
-      'ohne Angaben zur Schutzeinrichtung oder ohne Regel am Tag der Prüfung keiner für Zs',
+      'ohne Leitungsschutzschalter B, C oder D mit Nennstrom oder ohne Regel am Tag der Prüfung keiner für Zs',
     ])
   })
 
@@ -309,7 +309,23 @@ describe('the table of the measurements on circuits (#350)', () => {
 
     expect(table?.limits.filter((line) => line.includes('keiner für'))).toEqual([
       'über 500 V oder ohne Regel am Tag der Prüfung keiner für Riso ohne Verbraucher und Riso mit Verbrauchern',
-      'ohne Angaben zur Schutzeinrichtung oder ohne Regel am Tag der Prüfung keiner für Zs',
+      'ohne Leitungsschutzschalter B, C oder D mit Nennstrom oder ohne Regel am Tag der Prüfung keiner für Zs',
+    ])
+  })
+
+  it('names only a day before the rules where a limit of the insulation or the tripping time of version 2 is missing', () => {
+    const [table] = circuitTablesOf(
+      [
+        measured('c-f2', 'Isolationswiderstand Riso', '2,00 MΩ', null, {
+          workedOut: 'circuit_insulation',
+        }),
+        measured('c-f2', 'Auslösezeit tΔ', '24 ms', null, { workedOut: 'rcd_trip_time' }),
+      ],
+      circuits,
+    )
+
+    expect(table?.limits.filter((line) => line.includes('keiner für'))).toEqual([
+      'ohne Regel am Tag der Prüfung keiner für Riso und tΔ',
     ])
   })
 
