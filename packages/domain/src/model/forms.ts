@@ -1,7 +1,9 @@
 import {
   blockFieldKinds,
   type BlockField as GeneralBlockField,
+  type CircuitFacts,
   circuitList,
+  type CircuitVoltageClass,
   formEngine,
   type FormDefinition as GeneralFormDefinition,
   type FormField as GeneralFormField,
@@ -123,7 +125,10 @@ export function isStatedLimit(limit: unknown): limit is StatedLimit {
 /**
  * The limits worked out of the circuit a block is about (#350, ADR 0014 in
  * the repository opengewerk): the loop impedance from the protective device
- * of the circuit, and the tripping current from its rated residual current.
+ * of the circuit, the tripping current from its rated residual current, and
+ * since version 2 of both tests of the installation the insulation from its
+ * nominal voltage and the tripping time from whether its RCD is selective
+ * (opengewerk/opengewerk#1021).
  * Each is worked out in one unit and reads its rules by their keys in this
  * catalogue, with the unit each of them counts in; the build of the catalogue
  * asks that they are there.
@@ -141,6 +146,22 @@ export const workedOutLimits = {
   rcd_trip_current: {
     unit: 'milliamperes',
     rules: [{ key: 'elektro.rcd_trip_current_maximum', unit: 'basis_points' }],
+  },
+  circuit_insulation: {
+    unit: 'megaohms',
+    rules: [
+      { key: 'elektro.insulation_minimum_up_to_500v', unit: 'kiloohms' },
+      { key: 'elektro.insulation_minimum_selv_pelv', unit: 'kiloohms' },
+      { key: 'elektro.insulation_minimum_above_500v', unit: 'kiloohms' },
+    ],
+  },
+  rcd_trip_time: {
+    unit: 'milliseconds',
+    rules: [
+      { key: 'elektro.rcd_trip_time_maximum', unit: 'milliseconds' },
+      { key: 'elektro.rcd_selective_trip_time_minimum', unit: 'milliseconds' },
+      { key: 'elektro.rcd_selective_trip_time_maximum', unit: 'milliseconds' },
+    ],
   },
 } as const satisfies Readonly<
   Record<
@@ -179,6 +200,63 @@ function asFoundationNames(rules: RuleSet): RuleSet {
     keys: () => rules.keys(),
     all: () => rules.all(),
   }
+}
+
+/** The circuit a block is about, as far as its limits ask for it. */
+function factsOf(item: unknown): CircuitFacts | null {
+  return typeof item === 'object' && item !== null ? (item as CircuitFacts) : null
+}
+
+/** The rule of the least insulation resistance after Table 6.1 of DIN VDE 0100-600, by nominal voltage. */
+const insulationRule: Readonly<Record<CircuitVoltageClass, string>> = {
+  up_to_500: 'elektro.insulation_minimum_up_to_500v',
+  selv_pelv: 'elektro.insulation_minimum_selv_pelv',
+  above_500: 'elektro.insulation_minimum_above_500v',
+}
+
+/** Where the rules for a day are not there: no limit rather than another one. */
+const noLimitThatDay = { none: 'Für diesen Tag ist kein Grenzwert hinterlegt.' } as const
+
+/**
+ * The least insulation resistance of a circuit by its nominal voltage
+ * (opengewerk/opengewerk#1021): 0,5 MΩ for SELV and PELV, 1,0 MΩ up to and
+ * above 500 V. A circuit that names none is up to 500 V, as every circuit was
+ * before the foundation 0.9.0.
+ */
+export const circuitInsulation: LimitCalculator<FormTerms> = (_field, { rules, on, item }) => {
+  const rule = rules.at(insulationRule[factsOf(item)?.voltageClass ?? 'up_to_500'], on)
+
+  // Kiloohms are thousandths of the megaohms the field is measured in.
+  return rule ? { limitMilli: rule.value, atLeast: true, source: rule.source } : noLimitThatDay
+}
+
+/**
+ * The tripping time at IΔn (opengewerk/opengewerk#1021): at most that of an
+ * RCD without delay, or between the least and the most time of a selective
+ * one, which trips later so that one without delay after it trips first.
+ */
+export const circuitTripTime: LimitCalculator<FormTerms> = (_field, { rules, on, item }) => {
+  if (factsOf(item)?.rcdSelective === true) {
+    const least = rules.at('elektro.rcd_selective_trip_time_minimum', on)
+    const most = rules.at('elektro.rcd_selective_trip_time_maximum', on)
+
+    if (!least || !most) {
+      return noLimitThatDay
+    }
+
+    return {
+      limitMilli: most.value * 1000,
+      fromMilli: least.value * 1000,
+      atLeast: false,
+      source: least.source === most.source ? most.source : `${least.source}; ${most.source}`,
+    }
+  }
+
+  const most = rules.at('elektro.rcd_trip_time_maximum', on)
+
+  return most
+    ? { limitMilli: most.value * 1000, atLeast: false, source: most.source }
+    : noLimitThatDay
 }
 
 /** A calculator of the foundation, handed the rules of this catalogue under the names it asks for. */
@@ -259,6 +337,8 @@ export const forms = formEngine<FormTerms>({
         : { none: 'Der eigene Grenzwert nennt keinen Wert mit Quelle.' },
     loop_impedance: withCatalogueRules(loopImpedance),
     rcd_trip_current: withCatalogueRules(residualTripCurrent),
+    circuit_insulation: circuitInsulation,
+    rcd_trip_time: circuitTripTime,
   },
   kinds: fieldKinds,
   records: formRecordKinds,

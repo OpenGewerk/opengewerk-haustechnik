@@ -74,6 +74,8 @@ export async function chartOfAsset(
       tripCharacteristic: circuits.tripCharacteristic,
       ratedCurrentMilli: circuits.ratedCurrentMilli,
       ratedResidualCurrentMilli: circuits.ratedResidualCurrentMilli,
+      voltageClass: circuits.voltageClass,
+      rcdSelective: circuits.rcdSelective,
       position: circuits.position,
     })
     .from(circuits)

@@ -146,10 +146,29 @@ export function circuitsInChartOrder(
     tripCharacteristic: circuit.tripCharacteristic,
     ratedCurrentMilli: circuit.ratedCurrentMilli,
     ratedResidualCurrentMilli: circuit.ratedResidualCurrentMilli,
+    ...unusualFacts(circuit),
     board: board.designation,
     boardKind: board.kind,
     place,
   }))
+}
+
+/**
+ * The nominal voltage and the selective RCD of a circuit, where they are not
+ * the ordinary ones (opengewerk/opengewerk#1021): a circuit up to 500 V with
+ * an RCD without delay names neither, as every circuit did before the
+ * foundation 0.9.0, so that a page and a block of such a circuit stay what
+ * they were and their signature counts.
+ */
+export function unusualFacts(
+  circuit: Pick<CircuitFacts, 'voltageClass' | 'rcdSelective'>,
+): Pick<CircuitFacts, 'voltageClass' | 'rcdSelective'> {
+  return {
+    ...(circuit.voltageClass === undefined || circuit.voltageClass === 'up_to_500'
+      ? {}
+      : { voltageClass: circuit.voltageClass }),
+    ...(circuit.rcdSelective === true ? { rcdSelective: true } : {}),
+  }
 }
 
 /**

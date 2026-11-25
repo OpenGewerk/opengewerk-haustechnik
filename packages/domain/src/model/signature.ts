@@ -1,4 +1,5 @@
 import {
+  type CircuitVoltageClass,
   type Id,
   type IsoDate,
   longestSignaturePath,
@@ -11,7 +12,7 @@ import {
 import type { ActivityId, ActivityKind, WorkOrderId } from './activity.js'
 import { type AnswerCircuit, type FilledAnswer, pageAsksCircuits } from './answer.js'
 import type { AreaId } from './area.js'
-import { type ChartedCircuit, circuitsInChartOrder } from './electrical.js'
+import { type ChartedCircuit, circuitsInChartOrder, unusualFacts } from './electrical.js'
 import type { EvidenceResult } from './evidence.js'
 import { oneOf, type Problems } from './fields.js'
 import type { PropertyId } from './location.js'
@@ -382,6 +383,8 @@ export function signedPageOf(parts: SignedPageParts): SignedPage {
                 tripCharacteristic,
                 ratedCurrentMilli,
                 ratedResidualCurrentMilli,
+                voltageClass,
+                rcdSelective,
                 board,
                 place,
               }) => ({
@@ -391,6 +394,9 @@ export function signedPageOf(parts: SignedPageParts): SignedPage {
                 tripCharacteristic,
                 ratedCurrentMilli,
                 ratedResidualCurrentMilli,
+                // Only where they are not the ordinary ones, so that a page of
+                // before keeps its fingerprint (opengewerk/opengewerk#1021).
+                ...unusualFacts({ voltageClass, rcdSelective }),
                 board,
                 place,
               }),
@@ -634,6 +640,10 @@ export function heldChartOf(
       ) as AnswerCircuit['tripCharacteristic'],
       ratedCurrentMilli: heldNumber(circuit, 'ratedCurrentMilli'),
       ratedResidualCurrentMilli: heldNumber(circuit, 'ratedResidualCurrentMilli'),
+      ...unusualFacts({
+        voltageClass: (heldText(circuit, 'voltageClass') ?? 'up_to_500') as CircuitVoltageClass,
+        rcdSelective: circuit['rcdSelective'] === true,
+      }),
       position: heldNumber(circuit, 'position') ?? 0,
     })),
   )

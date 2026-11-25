@@ -290,11 +290,14 @@ export interface StatedCircuit {
  * How a limit worked out of a circuit comes about, for the legend under a
  * table of the circuits (#350): the loop impedance from the characteristic
  * and the rated current, the tripping current from the rated residual
- * current.
+ * current, the insulation from the nominal voltage and the tripping time
+ * from whether the RCD is selective (opengewerk/opengewerk#1021).
  */
 export const workedOutLimitWords: Readonly<Record<WorkedOutLimitKind, string>> = {
   loop_impedance: 'aus Charakteristik und Nennstrom',
   rcd_trip_current: 'höchstens der Bemessungsdifferenzstrom',
+  circuit_insulation: 'nach der Nennspannung',
+  rcd_trip_time: 'nach der Art des RCD, selektiv oder ohne Verzögerung',
 }
 
 /** An asset an answer is about, as an evidence keeps it: its number and its name. */

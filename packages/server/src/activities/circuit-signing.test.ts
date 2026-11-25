@@ -373,6 +373,33 @@ describe('a test of the electrical installation measured on its circuits (#350)'
     ).toEqual(['HV 1 Q1', 'HV 1 F5', 'UV 1 F1', 'UV 1 F3'])
   })
 
+  it('names the nominal voltage and a selective RCD of a circuit on both pages alike (opengewerk/opengewerk#1021)', async () => {
+    const f5 = circuitIds['F5'] ?? ''
+
+    await admin.query(
+      `update circuits set voltage_class = 'selv_pelv', rcd_type = 'a', rcd_selective = true
+       where id = $1`,
+      [f5],
+    )
+
+    try {
+      const server = await serverPage()
+      const device = await devicePage()
+
+      expect(server.circuits?.find((each) => each.id === f5)).toMatchObject({
+        voltageClass: 'selv_pelv',
+        rcdSelective: true,
+      })
+      expect(pageFingerprint(device ?? server)).toBe(pageFingerprint(server))
+    } finally {
+      await admin.query(
+        `update circuits set voltage_class = 'up_to_500', rcd_type = null, rcd_selective = false
+         where id = $1`,
+        [f5],
+      )
+    }
+  })
+
   it('writes a defect at the installation with the circuit, with the signature', async () => {
     const page = await serverPage()
 

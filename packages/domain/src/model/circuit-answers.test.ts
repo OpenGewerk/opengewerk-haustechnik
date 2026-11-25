@@ -411,4 +411,93 @@ describe('the page of a form over the circuits (#350)', () => {
       fingerprint(signedPageOf({ ...parts, circuits: [workbench, lighting] })),
     )
   })
+
+  it('names the nominal voltage and a selective RCD of a circuit only where they are not the ordinary ones (opengewerk/opengewerk#1021)', () => {
+    const page = signedPageOf({
+      ...parts,
+      circuits: [
+        { ...lighting, voltageClass: 'selv_pelv', rcdSelective: true },
+        { ...workbench, voltageClass: 'up_to_500', rcdSelective: false },
+      ],
+    })
+
+    expect(page.circuits).toEqual([
+      workbench,
+      { ...lighting, voltageClass: 'selv_pelv', rcdSelective: true },
+    ])
+  })
+})
+
+/**
+ * The insulation and the tripping time judged by the facts of the circuit
+ * since version 2 of both tests of the installation (opengewerk/opengewerk#1021):
+ * the least insulation by the nominal voltage, and the tripping time of a
+ * selective RCD by its own range.
+ */
+describe('the limits worked out of the nominal voltage and the kind of RCD (opengewerk/opengewerk#1021)', () => {
+  const insulation: MeasurementField = {
+    kind: 'measurement',
+    key: 'insulation_resistance',
+    label: 'Isolationswiderstand Riso',
+    unit: 'megaohms',
+    decimals: 2,
+    limit: { kind: 'circuit_insulation' },
+  }
+  const tripTimeOfItsRcd: MeasurementField = { ...tripTime, limit: { kind: 'rcd_trip_time' } }
+  const limits = ruleSet(
+    [
+      ['elektro.insulation_minimum_up_to_500v', 'kiloohms', 1_000, 'DIN VDE 0100-600, Tabelle 6.1'],
+      ['elektro.insulation_minimum_selv_pelv', 'kiloohms', 500, 'DIN VDE 0100-600, Tabelle 6.1'],
+      ['elektro.insulation_minimum_above_500v', 'kiloohms', 1_000, 'DIN VDE 0100-600, Tabelle 6.1'],
+      ['elektro.rcd_trip_time_maximum', 'milliseconds', 300, 'DIN EN 61008-1'],
+      ['elektro.rcd_selective_trip_time_minimum', 'milliseconds', 130, 'DIN EN 61008-1, S'],
+      ['elektro.rcd_selective_trip_time_maximum', 'milliseconds', 500, 'DIN EN 61008-1, S'],
+    ].map(([key, unit, value, source]) => ({
+      key: key as string,
+      validFrom: '2017-06-01' as const,
+      validUntil: null,
+      unit: unit as 'kiloohms',
+      value: value as number,
+      source: source as string,
+    })),
+  )
+  const unusual: AnswerCircuit = { ...lighting, voltageClass: 'selv_pelv', rcdSelective: true }
+  const judgedOn = (field: MeasurementField, value: string, circuit: AnswerCircuit) =>
+    answerVerdict(field, answer({ fieldKey: field.key, value }), {
+      rules: limits,
+      on: '2026-10-19',
+      circuit,
+    })
+
+  it('judges the insulation by the nominal voltage of the circuit', () => {
+    // 0,70 MΩ: within the 0,5 MΩ of SELV and PELV, outside the 1,0 MΩ up to 500 V.
+    expect(judgedOn(insulation, '700', unusual)).toMatchObject({ within: true, limitMilli: 500 })
+    expect(judgedOn(insulation, '700', lighting)).toMatchObject({
+      within: false,
+      limitMilli: 1_000,
+    })
+    expect(judgedOn(insulation, '999', { ...lighting, voltageClass: 'above_500' })).toMatchObject({
+      within: false,
+      limitMilli: 1_000,
+    })
+  })
+
+  it('judges the tripping time of a selective RCD by its own range', () => {
+    // 400 ms: within the 130 to 500 ms of a selective RCD, outside the 300 ms of one without delay.
+    expect(judgedOn(tripTimeOfItsRcd, '400000', unusual)).toMatchObject({ within: true })
+    expect(judgedOn(tripTimeOfItsRcd, '400000', lighting)).toMatchObject({ within: false })
+    // And a selective RCD that trips before 130 ms is outside as well.
+    expect(judgedOn(tripTimeOfItsRcd, '100000', unusual)).toMatchObject({ within: false })
+  })
+
+  it('carries the nominal voltage and a selective RCD into the block of the circuit, and nothing of an ordinary one', () => {
+    const ordinary: AnswerCircuit = { ...workbench, voltageClass: 'up_to_500', rcdSelective: false }
+    const values = formValuesOf(protocol, complete, [ordinary, unusual])
+    const facts = ({ id: _id, board: _board, place: _place, ...rest }: AnswerCircuit) => rest
+
+    expect(values['circuits']).toEqual([
+      expect.objectContaining({ itemId: workbench.id, item: facts(workbench) }),
+      expect.objectContaining({ itemId: lighting.id, item: facts(unusual) }),
+    ])
+  })
 })

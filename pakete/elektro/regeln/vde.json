@@ -69,7 +69,47 @@
       "value": 300,
       "source": "DIN EN 61008-1 (VDE 0664-10):2018-03, 5.3.12 mit Tabelle 1, und DIN EN 61009-1 (VDE 0664-20):2023-08, 5.3.8 mit Tabelle 2, Höchstwert der Abschaltzeit bei IΔn",
       "origin": "private_standard",
-      "note": "Für Fehlerstrom-Schutzeinrichtungen ohne Verzögerung. Eine selektive (S) darf länger brauchen; die Messung unterscheidet sie in dieser Fassung noch nicht. Ausgabe und Abschnitt sind nach den Inhaltsverzeichnissen von IEC 61008-1:2010 und IEC 61009-1:2010 gesetzt, auf denen diese Ausgaben beruhen, und noch nicht am Text der deutschen Ausgaben geprüft."
+      "note": "Für Fehlerstrom-Schutzeinrichtungen ohne Verzögerung. Für eine selektive (S) gelten ab Fassung 2 der beiden Prüfungen der Anlage `rcd_selective_trip_time_minimum` und `rcd_selective_trip_time_maximum`. Ausgabe und Abschnitt sind nach den Inhaltsverzeichnissen von IEC 61008-1:2010 und IEC 61009-1:2010 gesetzt, auf denen diese Ausgaben beruhen, und noch nicht am Text der deutschen Ausgaben geprüft."
+    },
+    {
+      "key": "insulation_minimum_selv_pelv",
+      "validFrom": "2017-06-01",
+      "validUntil": null,
+      "unit": "kiloohms",
+      "value": 500,
+      "source": "DIN VDE 0100-600 (VDE 0100-600):2017-06, Tabelle 6.1",
+      "origin": "private_standard",
+      "note": "SELV und PELV: Prüfspannung 250 V Gleichspannung, Isolationswiderstand mindestens 0,5 MΩ. Ab Fassung 2 der beiden Prüfungen der Anlage, nach der Nennspannung, die das Stromkreisverzeichnis für den Stromkreis nennt."
+    },
+    {
+      "key": "insulation_minimum_above_500v",
+      "validFrom": "2017-06-01",
+      "validUntil": null,
+      "unit": "kiloohms",
+      "value": 1000,
+      "source": "DIN VDE 0100-600 (VDE 0100-600):2017-06, Tabelle 6.1",
+      "origin": "private_standard",
+      "note": "Stromkreise über 500 V: Prüfspannung 1000 V Gleichspannung, Isolationswiderstand mindestens 1,0 MΩ. Ab Fassung 2 der beiden Prüfungen der Anlage."
+    },
+    {
+      "key": "rcd_selective_trip_time_minimum",
+      "validFrom": "2017-06-01",
+      "validUntil": null,
+      "unit": "milliseconds",
+      "value": 130,
+      "source": "DIN EN 61008-1 (VDE 0664-10):2018-03, 5.3.12 mit Tabelle 1, und DIN EN 61009-1 (VDE 0664-20):2023-08, 5.3.8 mit Tabelle 2, Abschaltzeit einer selektiven Fehlerstrom-Schutzeinrichtung (S) bei IΔn",
+      "origin": "private_standard",
+      "note": "Eine selektive (S) schaltet bei IΔn frühestens nach 130 ms ab, damit eine ohne Verzögerung nach ihr zuerst auslöst. Ab Fassung 2 der beiden Prüfungen der Anlage."
+    },
+    {
+      "key": "rcd_selective_trip_time_maximum",
+      "validFrom": "2017-06-01",
+      "validUntil": null,
+      "unit": "milliseconds",
+      "value": 500,
+      "source": "DIN EN 61008-1 (VDE 0664-10):2018-03, 5.3.12 mit Tabelle 1, und DIN EN 61009-1 (VDE 0664-20):2023-08, 5.3.8 mit Tabelle 2, Abschaltzeit einer selektiven Fehlerstrom-Schutzeinrichtung (S) bei IΔn",
+      "origin": "private_standard",
+      "note": "Eine selektive (S) schaltet bei IΔn spätestens nach 500 ms ab. Ab Fassung 2 der beiden Prüfungen der Anlage."
     }
   ]
 }

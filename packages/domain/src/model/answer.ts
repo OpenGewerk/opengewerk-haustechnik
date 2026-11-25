@@ -253,6 +253,13 @@ function blockCircuitOf(circuit: AnswerCircuit): BlockCircuit {
     tripCharacteristic: circuit.tripCharacteristic,
     ratedCurrentMilli: circuit.ratedCurrentMilli,
     ratedResidualCurrentMilli: circuit.ratedResidualCurrentMilli,
+    // The nominal voltage and the selective RCD the insulation and the
+    // tripping time are judged by (opengewerk/opengewerk#1021), only where
+    // they are not the ordinary ones.
+    ...(circuit.voltageClass === undefined || circuit.voltageClass === 'up_to_500'
+      ? {}
+      : { voltageClass: circuit.voltageClass }),
+    ...(circuit.rcdSelective === true ? { rcdSelective: true } : {}),
   }
 }
 
