@@ -455,6 +455,13 @@ export function EditDocumentDialog({
   const client = useSync()
   const [title, setTitle] = useState(text(document, 'title'))
   const [kind, setKind] = useState(maybeText(document, 'kind') ?? '')
+  // What the dialog had when it was opened, in the shape it saves, so that
+  // only what changed here is written, and a change somebody else made
+  // meanwhile stays (opengewerk/opengewerk#1057).
+  const [opened] = useState(() => ({
+    title: text(document, 'title').trim(),
+    kind: maybeText(document, 'kind'),
+  }))
   const [working, setWorking] = useState(false)
   const [trouble, setTrouble] = useState<string | null>(null)
   const [asked, setAsked] = useState(false)
@@ -471,10 +478,12 @@ export function EditDocumentDialog({
     setTrouble(null)
 
     try {
-      const result = await client.update('attachments', String(document['id']), {
-        title: title.trim(),
-        kind: kind === '' ? null : kind,
-      })
+      const result = await client.update(
+        'attachments',
+        String(document['id']),
+        { title: title.trim(), kind: kind === '' ? null : kind },
+        opened,
+      )
 
       if (result.outcome === 'refused') {
         setTrouble(refusalFor(result))
