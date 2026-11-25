@@ -183,9 +183,9 @@ function chapters(
  * The measurements of a group over the circuits as a table (#350, as the
  * board of the PDF with the circuits draws it, `circuitTablesOf`): the
  * circuits board by board in the order of the chart, each on one line with
- * what protects it, a column for each measured value, beside the loop
- * impedance the limit worked out of the circuit, and what else was said in
- * the block under "Bemerkung". A value outside its limit is bold and red, so
+ * what protects it, a column for each measured value, beside each one whose
+ * limit is worked out of the circuit (loop impedance, insulation and tripping
+ * time) that limit, and what else was said in the block under "Bemerkung". A value outside its limit is bold and red, so
  * that it reads in black and white too. The legend under the table says where
  * each limit comes from, with its sources.
  */
