@@ -48,7 +48,7 @@ services:
     # was pushed under it last. The backup of the foundation is built on the
     # very same image, and "test-stack.sh base-images" stays red until a
     # raised submodule and this line name the same one.
-    image: postgres:18-alpine@sha256:10a5c69a83035ab5239f5620d708520e8b28f5aa1f2b20143e6024532edadfb5
+    image: postgres:18-alpine@sha256:0115267ab5a509022df9319c77be365cef335adb71556c75f60f5360ee247e71
     restart: unless-stopped
     logging: *logging
     <<: *hardening
@@ -111,6 +111,10 @@ services:
     command: ['node', '--enable-source-maps', 'dist/migrate.js']
     environment:
       MIGRATION_DATABASE_URL: postgres://opengewerk_owner:${HAUSTECHNIK_OWNER_PASSWORD}@postgres:5432/haustechnik
+      # Checked before the first change, by the rule the application holds at
+      # its start (opengewerk/opengewerk#984): an address it would refuse stops
+      # the update here.
+      TRUSTED_ORIGINS: ${TRUSTED_ORIGINS:?TRUSTED_ORIGINS fehlt in der .env-Datei}
     depends_on:
       postgres:
         condition: service_healthy
@@ -223,7 +227,7 @@ services:
   # with it; a step of the CI checks that both name the same image, and the
   # check of the widths takes its browser from this line too.
   renderer:
-    image: ghcr.io/browserless/chromium:v2.62.0@sha256:0f28bbde20e890463e8d0f253dc2b66860de8ad3aef6cc17bcdbfe8a02ffccf0
+    image: ghcr.io/browserless/chromium:v2.64.3@sha256:f53b8d1dedf3dce0cc738ae4d5cb82a72cb895914364bc36345215da7b7b785c
     restart: unless-stopped
     profiles: ['renderer']
     logging: *logging
@@ -289,13 +293,33 @@ services:
     # before they are packed, a dump and a copy of the file store, and those
     # can come to gigabytes: in a tmpfs they would lie in memory, in a volume
     # they would outlive a killed run, while the writable layer goes with the
-    # container. Of the capabilities of root it keeps three: CHOWN for handing
-    # the restored files to the application, DAC_OVERRIDE for writing into the
-    # file store of that user and into a target such as a share that belongs to
-    # somebody else, FOWNER for setting the times and modes of what it
-    # restores there.
-    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER]
+    # container. Of the capabilities of root it keeps six. DAC_OVERRIDE for
+    # writing into a target such as a share that belongs to somebody else.
+    # SETUID and SETGID for gosu: restore.sh of the foundation empties and
+    # fills the file store as the user it belongs to, not as root, so that a
+    # link an application that still runs puts into the store does not lead
+    # root out of it; without them it turns a store that is not root's away
+    # before it changes anything. KILL so that the stop below reaches those
+    # steps too: without it the init, which runs as root, may not signal a
+    # process of another user. CHOWN and FOWNER for the two commands
+    # restore.sh names when the store holds a folder its owner may not empty.
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, KILL, SETGID, SETUID]
+    # A stop sends SIGINT, the stop signal of the postgres image, and the init
+    # hands it to every process of the run at once, the way Ctrl+C does
+    # (opengewerk/opengewerk#1007, #625): pg_dump, tar or the play of the dump
+    # end, and the script ends through its way out, which cleans up. Without
+    # the init the signal reached the first process alone, often after the
+    # KILL that ends the grace period. The grace period is that of the
+    # schedule below: a backup cleaning up on a target that does not answer
+    # takes up to 35 seconds.
+    init: true
+    stop_grace_period: 2m
     environment: &backup-environment
+      # Read by the init of this service, which then signals the process group
+      # of the script and not the script alone. The schedule below runs
+      # without an init, where it changes nothing: schedule.sh passes the
+      # signal on itself.
+      TINI_KILL_PROCESS_GROUP: '1'
       POSTGRES_HOST: postgres
       POSTGRES_DB: haustechnik
       PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD fehlt in der .env-Datei}
@@ -309,6 +333,10 @@ services:
       STORAGE_PATH: /var/lib/opengewerk-haustechnik/storage
       BACKUP_PATH: /var/lib/opengewerk-haustechnik/backups
       BACKUP_STATUS_PATH: /var/lib/opengewerk-haustechnik/backup-status
+      # The lock that keeps backups and a restore apart
+      # (opengewerk/opengewerk#1012), on the same volume. Named here, so that
+      # it stays there when a run points BACKUP_STATUS_PATH elsewhere.
+      BACKUP_LOCK_PATH: /var/lib/opengewerk-haustechnik/backup-status/.running
       BACKUP_KEEP: ${BACKUP_KEEP:-14}
       # The public key an archive is encrypted to. Without it the archive is
       # written in the clear.
@@ -343,6 +371,10 @@ services:
     # somebody else.
     cap_add: [DAC_OVERRIDE]
     command: ['schedule.sh']
+    # A stop passes TERM on to a backup under way, which cleans up first
+    # (opengewerk/opengewerk#1004, #625); on a target that does not answer
+    # that takes up to 35 seconds.
+    stop_grace_period: 2m
     environment:
       <<: *backup-environment
       TZ: Europe/Berlin
