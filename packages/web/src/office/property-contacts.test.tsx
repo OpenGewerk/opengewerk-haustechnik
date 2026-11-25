@@ -469,5 +469,10 @@ describe('whoever keeps the properties', () => {
     await waitFor(() => {
       expect(people()).toEqual(['Ines HartmannSchulleitung · 0000 4400'])
     })
+    // The form closes once the removal is through, after the list has changed;
+    // waited for, so that it does not close after the test has ended.
+    await waitFor(() => {
+      expect(card().queryByRole('button', { name: 'Entfernen' })).toBeNull()
+    })
   })
 })

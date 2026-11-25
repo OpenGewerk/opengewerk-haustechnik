@@ -7,6 +7,8 @@ die Versionsnummern folgen der [Semantischen Versionierung](https://semver.org/l
 
 ## [Unreleased]
 
+Vor dem Update: Die Haustechnik braucht mit dem Fundament 0.9.0 Docker Engine 28.3.3 oder neuer, `sh docker/start.sh` bricht mit einer älteren ab, auch nach dem Rückspielen einer Sicherung. Vor 28.0.0 erreichen Rechner im selben Netz Ports, die nur auf `127.0.0.1` liegen, und 28.2.0 bis 28.3.2 öffnen sie nach einem Neuladen von firewalld wieder (CVE-2025-54388). Außerdem nimmt `setup.sh`, das `start.sh` aufruft, eine `.env` nicht mehr an, die Docker Compose anders liest als die Skripte, etwa mit `export` vor einem Namen, einem Leerzeichen vor dem `=` oder einem Namen, der zweimal dasteht; die Meldung nennt die Zeile (opengewerk/opengewerk#996).
+
 ### Hinzugefügt
 
 - Ein Stromkreis nennt seine Nennspannung nach Tabelle 6.1 der DIN VDE 0100-600 (bis 500 V, SELV oder PELV, über 500 V) und ob sein RCD selektiv ist; beides fragt das Formular des Fundaments seit OpenGewerk 0.9.0 (opengewerk/opengewerk#1021), und der Abgleich nimmt es an (Migration 0118). Selektiv ist nur ein RCD mit Typ. Nimmt ein Gerät den Typ weg, ohne vom selektiven RCD zu wissen, geht der mit; macht jemand den RCD selektiv, während ein anderer den Typ weggenommen hat, wird das ein Konflikt für diesen Stromkreis, und der Rest der Übertragung kommt an. Ein Stromkreis von vorher ist einer bis 500 V mit einem RCD ohne Verzögerung. Büro und Baustelle nennen die Nennspannung bei einem Stromkreis, der nicht bis 500 V ist. Warum: Ohne die beiden Felder im Abgleich lehnte die Haustechnik eine Übertragung ab, in der das Formular des Fundaments eines davon schickt.

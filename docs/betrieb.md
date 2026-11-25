@@ -8,6 +8,8 @@ Eine Installation startet mit einem Befehl, aus einem Checkout mit dem Submodul 
 sh docker/start.sh
 ```
 
+Gebraucht werden Docker Engine ab 28.3.3 und Docker Compose ab 2.22; mit einer älteren Engine bricht `start.sh` ab, bevor es etwas holt oder einrichtet, beim ersten Start wie bei einem Update und nach dem Rückspielen. Vor 28.0.0 erreichen Rechner im selben Netz Ports, die nur auf `127.0.0.1` liegen, und 28.2.0 bis 28.3.2 öffnen sie nach einem Neuladen von firewalld wieder (CVE-2025-54388).
+
 Beim ersten Mal legt das Skript `docker/.env` an, erzeugt jeden Schlüssel und fragt nach der Adresse, unter der die Instanz im Browser geöffnet wird; ohne Terminal kommt sie aus `HAUSTECHNIK_ADDRESS`. Ausgegeben werden nur Namen, nie ein Wert. Danach baut es das Abbild, spielt die Migrationen ein und startet erst dann die Anwendung, in der Reihenfolge eines Updates. Eine leere Instanz zeigt im Browser die Ersteinrichtung, die nach dem Einrichtungscode aus `docker/.env` fragt und den Betreiber, das erste Konto und dessen zweiten Faktor anlegt. Die Skripte dahinter sind die des Fundaments (`upstream/opengewerk/docker`); was sie über diese Anwendung wissen müssen, steht in `docker/application.env` und `docker/compose.yaml`.
 
 Ein Update ist derselbe Befehl, nach `git pull` und `git submodule update --init`. Er baut das Abbild neu, migriert und tauscht erst danach die laufenden Container; scheitert die Migration, arbeitet die Instanz auf dem Stand davor weiter.
