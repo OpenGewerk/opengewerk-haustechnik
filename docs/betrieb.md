@@ -25,7 +25,7 @@ docker compose -f docker/compose.yaml --profile backup run --rm backup backup.sh
 docker compose -f docker/compose.yaml --profile backup run --rm backup verify.sh latest
 ```
 
-Zum Rückspielen werden zuerst die Anwendung und die nächtliche Sicherung angehalten, dann wird zurückgespielt, und erst wenn beides ohne Fehler durchlief, startet `sh docker/start.sh` die Instanz wieder (#628). Das führt wie nach einem Update die Migrationen aus, falls die Sicherung von einer älteren Fassung stammt, und gibt der Anwendung die Anmeldung zurück, die `restore.sh` ihr für die Dauer des Rückspielens nimmt:
+Zum Rückspielen werden zuerst die Anwendung und die nächtliche Sicherung angehalten, dann wird zurückgespielt, und erst wenn beides ohne Fehler durchlief, startet `sh docker/start.sh` die Instanz wieder (#628). Das führt wie nach einem Update die Migrationen aus, falls die Sicherung von einer älteren Fassung stammt. Die Anmeldung, die `restore.sh` der Anwendung für die Dauer des Rückspielens nimmt, gibt es nach einem vollständigen Lauf selbst zurück, nach einer älteren Sicherung aber erst nach diesen Migrationen:
 
 ```bash
 docker compose -f docker/compose.yaml stop app backup-schedule &&
