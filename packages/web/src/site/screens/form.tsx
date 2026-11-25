@@ -6,6 +6,7 @@ import {
   type FormDefinition,
   heldChartOf,
   type IsoDate,
+  measuringConditionsIn,
   type RecordState,
   statedCircuitWords,
   weekdayLabel,
@@ -268,7 +269,7 @@ export function useActivityForm(activityId: string, opened: readonly OpenedBlock
           pointAssets,
           circuits,
           // For the conditions a circuit was measured in (#630).
-          answered: filled,
+          conditionsOf: measuringConditionsIn(filled),
           assetName: (id) => {
             const asset = assets.find((candidate) => candidate['id'] === id)
 

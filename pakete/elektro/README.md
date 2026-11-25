@@ -105,7 +105,8 @@ Die Formulare mit den Messungen je Stromkreis, seit der Fassung 1.3.0:
 - `installation_initial_test`: Erstprüfung der elektrischen Anlage nach DIN VDE 0100-600 mit
   Besichtigen, Erproben und Messen
 - `installation_test`: wiederkehrende Prüfung der elektrischen Anlage nach DGUV Vorschrift 3 oder 4
-  mit DIN VDE 0105-100, mit denselben Messungen
+  mit DIN VDE 0105-100, in Fassung 1 mit denselben Messungen, in Fassung 2 mit der Isolation mit
+  und ohne Verbraucher und der Umgebung je Stromkreis
 
 Ihre Gruppe "Messen je Stromkreis" hat einen Block für jeden Stromkreis der Anlage aus dem
 Stromkreisverzeichnis und keinen weiteren: Schutzleiter RPE, Isolationswiderstand Riso,

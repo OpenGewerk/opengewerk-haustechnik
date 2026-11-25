@@ -716,12 +716,12 @@ export interface AnswersContext extends LimitContext {
   readonly assetName?: (id: string) => string | null
   readonly circuits?: readonly AnswerCircuit[] | null
   /**
-   * Every answer of the activity, for the conditions a circuit was measured
-   * in (#630): the environment in its block, the earthing system and the
-   * nominal voltage in the head. Without them a block is judged dry, in a
-   * TN or TT system at 230 V.
+   * The conditions a circuit was measured in (#630), gathered once from every
+   * answer of the activity with `measuringConditionsIn`: the environment in
+   * its block, the earthing system and the nominal voltage in the head.
+   * Without them a block is judged dry, in a TN or TT system at 230 V.
    */
-  readonly answered?: readonly FilledAnswer[] | null
+  readonly conditionsOf?: MeasuringConditionsOf | null
 }
 
 /** An asset of a point for every asset in words: its name, or its place among the assets of the point. */
@@ -768,29 +768,67 @@ export function measuringConditionsOf(
   groupKey: string | null,
   blockKey: string | null,
 ): MeasuringConditions {
-  const valueOf = (fieldKey: string, inBlock: boolean): unknown => {
-    const found = (answers ?? []).find(
-      (answer) =>
-        answer.fieldKey === fieldKey &&
-        (inBlock
-          ? answer.groupKey === groupKey && answer.blockKey === blockKey
-          : answer.groupKey === null),
-    )
+  return measuringConditionsIn(answers)(groupKey, blockKey)
+}
 
-    return found?.value === null || found === undefined ? undefined : parsed(found.value)
+/** The conditions of the block of a group, looked up by the group and the block. */
+export type MeasuringConditionsOf = (
+  groupKey: string | null,
+  blockKey: string | null,
+) => MeasuringConditions
+
+/** Where the first answer of a field in the head is kept. */
+const headKey = (fieldKey: string) => `head:${fieldKey}`
+
+/** Where the first environment of a block is kept. */
+const environmentKey = (groupKey: string, blockKey: string | null) =>
+  JSON.stringify([groupKey, blockKey])
+
+/**
+ * The conditions of every block of an activity (#630), from one pass over
+ * its answers: the first answer of each field counts, as a search would find
+ * it. Judging every value of an installation looks its block up here instead
+ * of going through all the answers again for each value, which grew with the
+ * square of the circuits.
+ */
+export function measuringConditionsIn(
+  answers: readonly FilledAnswer[] | null | undefined,
+): MeasuringConditionsOf {
+  const first = new Map<string, FilledAnswer>()
+
+  for (const answer of answers ?? []) {
+    const key =
+      answer.groupKey === null
+        ? headKey(answer.fieldKey)
+        : answer.fieldKey === 'environment'
+          ? environmentKey(answer.groupKey, answer.blockKey)
+          : null
+
+    if (key !== null && !first.has(key)) {
+      first.set(key, answer)
+    }
   }
-  const environment = groupKey === null ? undefined : valueOf('environment', true)
-  const earthingSystem = valueOf('earthing_system', false)
-  const nominalVoltageMilli = valueOf('nominal_voltage', false)
 
-  return {
-    ...(environment === 'dry' || environment === 'damp' ? { environment } : {}),
+  const valueOf = (key: string): unknown => {
+    const found = first.get(key)
+
+    return found === undefined || found.value === null ? undefined : parsed(found.value)
+  }
+  const earthingSystem = valueOf(headKey('earthing_system'))
+  const nominalVoltageMilli = valueOf(headKey('nominal_voltage'))
+  const head: MeasuringConditions = {
     ...(typeof earthingSystem === 'string' ? { earthingSystem } : {}),
     ...(typeof nominalVoltageMilli === 'number' &&
     Number.isInteger(nominalVoltageMilli) &&
     nominalVoltageMilli > 0
       ? { nominalVoltageMilli }
       : {}),
+  }
+
+  return (groupKey, blockKey) => {
+    const environment = groupKey === null ? undefined : valueOf(environmentKey(groupKey, blockKey))
+
+    return environment === 'dry' || environment === 'damp' ? { environment, ...head } : head
   }
 }
 
@@ -910,6 +948,7 @@ export function answersMissing(
   missing.push(...circuitsMissing(definition, answers, context.circuits))
 
   const blockOf = blockPlaces(answers)
+  const conditionsOf = measuringConditionsIn(answers)
 
   for (const answer of answers) {
     const found = answeredField(definition, answer)
@@ -921,7 +960,7 @@ export function answersMissing(
       answerVerdict(found.field, answer, {
         ...context,
         circuit,
-        conditions: measuringConditionsOf(answers, answer.groupKey, answer.blockKey),
+        conditions: conditionsOf(answer.groupKey, answer.blockKey),
       }).within === false &&
       (answer.remark ?? '').trim() === ''
     ) {
@@ -1057,6 +1096,7 @@ export function answerFindings<Answer extends FilledAnswer>(
   context: AnswersContext,
 ): readonly AnswerFinding<Answer>[] {
   const blockOf = blockPlaces(answers)
+  const conditionsOf = measuringConditionsIn(answers)
   const findings: AnswerFinding<Answer>[] = []
 
   for (const answer of inFormOrder(definition, answers, context.pointAssets, context.circuits)) {
@@ -1080,7 +1120,7 @@ export function answerFindings<Answer extends FilledAnswer>(
       const verdict = answerVerdict(field, answer, {
         ...context,
         circuit,
-        conditions: measuringConditionsOf(answers, answer.groupKey, answer.blockKey),
+        conditions: conditionsOf(answer.groupKey, answer.blockKey),
       })
       const value = answer.value === null ? undefined : parsed(answer.value)
 
@@ -1274,6 +1314,7 @@ export function statedAnswers(
   },
 ): readonly StatedAnswer[] {
   const blockOf = blockPlaces(answers)
+  const conditionsOf = measuringConditionsIn(answers)
   const stated: StatedAnswer[] = []
 
   for (const answer of inFormOrder(definition, answers, context.pointAssets, context.circuits)) {
@@ -1292,7 +1333,7 @@ export function statedAnswers(
         ? answerVerdict(field, answer, {
             ...context,
             circuit,
-            conditions: measuringConditionsOf(answers, answer.groupKey, answer.blockKey),
+            conditions: conditionsOf(answer.groupKey, answer.blockKey),
           })
         : null
     const asset = assetOfAnswer(answer)

@@ -613,30 +613,35 @@ records_for_backup() {
   done
   echo "Der Lauf der Fristen hat die Frist der Pflicht nach ${waited} Sekunden geschrieben."
 
-  # The pass queues mails for the deadlines, to a mail server that is not
-  # there. The worker tries each of them once a minute and then less often,
-  # and every try is two changes in the log, written whenever it comes:
-  # between the count before the backup and the backup, or between the
-  # restore and the count after it (opengewerk-haustechnik#634). Given up on
-  # here, so that no worker takes them up again. A mail the worker has just
-  # claimed waits exactly ten minutes ahead of its last change, which no
-  # wait after a try does (1, 5, 15, 60 and 180 minutes), and is left alone
-  # until the worker has written its try; the row lock keeps the two from
-  # crossing.
+  # The pass marks the deadlines reminded; the mail for each is written by the
+  # mail worker in its own pass, five seconds after the start and then once a
+  # minute, and tried in the same pass, to a mail server that is not there.
+  # The worker tries it again after 1, 5 and 15 minutes, and every try is two
+  # changes in the log, written whenever it comes: between the count before
+  # the backup and the backup, or between the restore and the count after it
+  # (opengewerk-haustechnik#634). So the mails are waited for over more than
+  # a minute of the worker and given up on as they come; a mail given up on
+  # is not written again, its cause stays. A mail the worker has just claimed
+  # waits exactly ten minutes ahead of its last change, which no wait after a
+  # try does, and is left alone until the worker has written its try; the row
+  # lock keeps the two from crossing.
+  started=$(date +%s)
   waited=0
-  until test "$(value "select count(*) from mail_outbox where status = 'pending'")" = 0; do
+  until [ $(($(date +%s) - started)) -ge 70 ] &&
+    test "$(value "select count(*) from mail_outbox where status = 'pending'")" = 0; do
     sql "
       update mail_outbox
          set status = 'failed', next_attempt_at = now(),
              last_error = coalesce(last_error, 'Nicht zugestellt: Mailserver der Probe.')
        where status = 'pending' and next_attempt_at - updated_at <> interval '10 minutes';"
     waited=$((waited + 1))
-    if [ "$waited" -gt 60 ]; then
-      echo 'Im Postausgang wartet nach einer Minute noch eine E-Mail.'
+    if [ "$waited" -gt 180 ]; then
+      echo 'Im Postausgang wartet nach drei Minuten noch eine E-Mail.'
       exit 1
     fi
     sleep 1
   done
+  echo "Die E-Mails der Fristen sind nach ${waited} Sekunden aufgegeben."
 }
 
 # An account and its place at the Betreiber on the older state, written with

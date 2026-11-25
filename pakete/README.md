@@ -240,7 +240,22 @@ ausgefüllte Formular die Vorlage des nächsten ist). Die Arten:
   bei seinem Nennstrom, und `{ "kind": "rcd_trip_current" }` an einem Messwert in `milliamperes`,
   als Anteil (`elektro.rcd_trip_current_maximum`, in `basis_points`) an seinem
   Bemessungsdifferenzstrom. Der Bau verlangt, dass es diese Regeln gibt; ein Stromkreis ohne
-  Charakteristik, Nennstrom oder Bemessungsdifferenzstrom hat keinen Grenzwert.
+  Charakteristik, Nennstrom oder Bemessungsdifferenzstrom hat keinen Grenzwert. Seit dem Paket
+  Elektro 1.6.0 kommen vier dazu: `{ "kind": "circuit_insulation" }` an einem Messwert in
+  `megaohms` nach der Nennspannung des Stromkreises (`elektro.insulation_minimum_up_to_500v`,
+  `_selv_pelv` und `_above_500v`, in `kiloohms`), `{ "kind": "rcd_trip_time" }` an einem
+  Messwert in `milliseconds` nach der Art seines RCD (`elektro.rcd_trip_time_maximum`, beim
+  selektiven `elektro.rcd_selective_trip_time_minimum` und `_maximum`), und
+  `{ "kind": "recurring_insulation_without_loads" }` und
+  `{ "kind": "recurring_insulation_with_loads" }` an einem Messwert in `megaohms` nach
+  Tabelle 11 der DGUV Information 203-072: bei SELV und PELV
+  `elektro.insulation_recurring_selv_pelv` (in `kiloohms`), sonst je Volt der Nennspannung
+  (`elektro.insulation_recurring_per_volt_without_loads_dry`, `_without_loads_damp`,
+  `_with_loads_dry`, `_with_loads_damp`, im IT-System `elektro.insulation_recurring_per_volt_it`,
+  in `factor`). Die Nennspannung kommt aus dem Feld `nominal_voltage` im Kopf des Formulars, in
+  `volts`, ohne Angabe aus `elektro.loop_nominal_voltage`; die Umgebung aus dem Feld
+  `environment` im Block (`dry` oder `damp`) und die Netzform aus `earthing_system` im Kopf
+  (`it` für ein IT-System).
 - `choice`: eine Auswahl mit mindestens zwei `options`, je mit `value` und `label`
 - `yes_no` und `photo`
 - `check_point`: ein Prüfpunkt mit den Antworten "in Ordnung", "nicht in Ordnung", "entfällt"
@@ -256,7 +271,7 @@ ausgefüllte Formular die Vorlage des nächsten ist). Die Arten:
   Eine andere Liste lehnt der Bau ab
 
 Einheiten sind `degrees_celsius`, `count_per_100_ml`, `kilowatt_hours`, `megawatt_hours`,
-`cubic_metres`, `ohms`, `megaohms`, `milliamperes`, `milliseconds` und `kilograms`; ein Grenzwert auf
+`cubic_metres`, `ohms`, `megaohms`, `milliamperes`, `milliseconds`, `kilograms` und `volts`; ein Grenzwert auf
 einen Widerstand ist eine Regel in `kiloohms`, einer auf eine Anzahl je 100 ml eine Regel in derselben
 Einheit, einer auf eine Zeit eine Regel in `milliseconds`, und für einen Strom hat die Regel-Engine
 keine Einheit; sein Grenzwert wird berechnet. Ein Messwert, ein Prüfpunkt, ein Zählerstand und

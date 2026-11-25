@@ -3,6 +3,7 @@ import {
   type FilledAnswer,
   type GroupField,
   type MeasurementField,
+  measuringConditionsIn,
   ruleSet,
 } from '@opengewerk/haustechnik-domain'
 import { today } from '@opengewerk/platform-web/format'
@@ -312,7 +313,12 @@ describe('a value in the block of a circuit on site, with the conditions of its 
     pointVerdict(
       point,
       { value: '20', result: null, remark: null, attachmentId: null },
-      { rules, on: '2026-10-19', circuits: [circuit], answered },
+      {
+        rules,
+        on: '2026-10-19',
+        circuits: [circuit],
+        conditionsOf: measuringConditionsIn(answered),
+      },
     )
 
   it('judges it by the earthing system the head of the activity names', () => {
