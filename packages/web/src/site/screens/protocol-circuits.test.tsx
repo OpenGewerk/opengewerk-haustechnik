@@ -554,13 +554,15 @@ describe('a value of a circuit judged with the conditions of its activity on sit
     expect(await screen.findByText('Außerhalb des Grenzwerts, mindestens 0,115 MΩ.')).toBeDefined()
   })
 
-  it('asks the environment in the block of each circuit and keeps it with the circuit', async () => {
+  it('asks the environment in the block of each circuit, keeps it with the circuit and judges by it at once', async () => {
     const { client } = await mountSite(`/vorgaenge/${test.id}/stromkreise/${f2.id}`, {
       server: measuredIn(null),
       answers: servingCatalogue(table11Catalogue),
     })
 
-    fireEvent.click(await screen.findByRole('link', { name: /Umgebung/ }))
+    expect(await screen.findByText('Außerhalb des Grenzwerts, mindestens 0,230 MΩ.')).toBeDefined()
+
+    fireEvent.click(screen.getByRole('link', { name: /Umgebung/ }))
     fireEvent.click(await screen.findByRole('radio', { name: 'feucht' }))
 
     await waitFor(() => {
@@ -575,5 +577,10 @@ describe('a value of a circuit judged with the conditions of its activity on sit
         },
       ])
     })
+
+    // Back at the circuit, its insulation is judged as damp: 500 Ω per volt at 230 V.
+    fireEvent.click(screen.getByRole('link', { name: /Zurück zum Stromkreis/ }))
+
+    expect(await screen.findByText('Außerhalb des Grenzwerts, mindestens 0,115 MΩ.')).toBeDefined()
   })
 })
