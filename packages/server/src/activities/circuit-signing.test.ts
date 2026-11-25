@@ -390,6 +390,7 @@ describe('a test of the electrical installation measured on its circuits (#350)'
         voltageClass: 'selv_pelv',
         rcdSelective: true,
       })
+      expect(device).not.toBeNull()
       expect(pageFingerprint(device ?? server)).toBe(pageFingerprint(server))
     } finally {
       await admin.query(

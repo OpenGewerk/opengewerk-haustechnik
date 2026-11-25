@@ -115,9 +115,15 @@ function FloorFormScreen({
     level: levelOf(values['level']),
   })
 
-  async function save(values: Record<string, string>): Promise<EditResult> {
+  // What the form had when it was opened, so that only what changed here is
+  // written, and a change somebody else made meanwhile stays
+  // (opengewerk/opengewerk#1057).
+  async function save(
+    values: Record<string, string>,
+    opened: Record<string, string>,
+  ): Promise<EditResult> {
     const result = editing
-      ? await client.update('floors', floorId, wanted(values))
+      ? await client.update('floors', floorId, wanted(values), wanted(opened))
       : await makeAt(client, `/buildings/${buildingId}/floors`, wanted(values))
 
     if (result.outcome === 'queued') {
