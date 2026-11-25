@@ -274,6 +274,14 @@
         "on": "2026-10-16",
         "sha256": "c82413fa5b1e3f52a8b109d5f35034cbc757aa65f1622212bcdb9b775dafd0b6"
       }
+    },
+    {
+      "file": "formulare/installation_initial_test.v2.json",
+      "checkedOn": "2026-11-25"
+    },
+    {
+      "file": "formulare/installation_test.v2.json",
+      "checkedOn": "2026-11-25"
     }
   ],
   "rules": [
@@ -411,6 +419,26 @@
       "key": "rcd_trip_time_maximum",
       "validFrom": "2017-06-01",
       "checkedOn": "2026-10-22"
+    },
+    {
+      "key": "insulation_minimum_selv_pelv",
+      "validFrom": "2017-06-01",
+      "checkedOn": "2026-11-25"
+    },
+    {
+      "key": "insulation_minimum_above_500v",
+      "validFrom": "2017-06-01",
+      "checkedOn": "2026-11-25"
+    },
+    {
+      "key": "rcd_selective_trip_time_minimum",
+      "validFrom": "2017-06-01",
+      "checkedOn": "2026-11-25"
+    },
+    {
+      "key": "rcd_selective_trip_time_maximum",
+      "validFrom": "2017-06-01",
+      "checkedOn": "2026-11-25"
     }
   ],
   "classes": [

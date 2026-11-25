@@ -298,7 +298,7 @@ describe('the package Elektro', () => {
       ).toEqual([
         [null, 'Kein Grenzwert.'],
         [true, 'Innerhalb des Grenzwerts, mindestens 1,00 MΩ.'],
-        [true, 'Innerhalb des Grenzwerts, höchstens 1,43 Ω.'],
+        [true, 'Innerhalb des Grenzwerts, höchstens 1,437 Ω.'],
         [true, 'Innerhalb des Grenzwerts, höchstens 30,0 mA.'],
         [true, 'Innerhalb des Grenzwerts, höchstens 300 ms.'],
       ])
@@ -311,6 +311,33 @@ describe('the package Elektro', () => {
         ].map((each) => each?.within),
         key,
       ).toEqual([false, false, false, false])
+
+      // Since version 2 (opengewerk/opengewerk#1021): a SELV or PELV circuit
+      // with a selective RCD, judged by its own limits, 0,5 MΩ and 130 to 500 ms.
+      const unusual = { ...circuit, voltageClass: 'selv_pelv', rcdSelective: true }
+      const unusualVerdict = (field: string, value: number) => {
+        const found = measured.get(field)
+
+        return found === undefined
+          ? null
+          : forms.limitVerdict(found, value, {
+              rules: catalogue.ruleSet,
+              on: '2017-06-01',
+              item: unusual,
+            })
+      }
+
+      expect(catalogue.form(key, today)?.version, key).toBe(2)
+      expect(
+        [
+          unusualVerdict('insulation_resistance', 500),
+          unusualVerdict('insulation_resistance', 499),
+          unusualVerdict('rcd_trip_time', 400_000),
+          unusualVerdict('rcd_trip_time', 129_999),
+          verdict('rcd_trip_time', 400_000),
+        ].map((each) => each?.within),
+        key,
+      ).toEqual([true, false, true, false, false])
     }
   })
 

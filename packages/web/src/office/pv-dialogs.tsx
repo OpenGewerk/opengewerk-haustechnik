@@ -111,7 +111,10 @@ export function InverterDialog({
   const inverterId = inverter ? String(inverter['id']) : null
   const name = text(inverter, 'designation')
 
-  async function submit(values: Draft): Promise<EditResult> {
+  // What the form had when it was opened, so that only what changed here is
+  // written, and a change somebody else made meanwhile stays
+  // (opengewerk/opengewerk#1057).
+  async function submit(values: Draft, opened?: Draft): Promise<EditResult> {
     const result =
       inverterId === null
         ? await client.create('inverters', {
@@ -119,7 +122,7 @@ export function InverterDialog({
             assetId,
             position: nextPosition(inverters),
           })
-        : await client.update('inverters', inverterId, values)
+        : await client.update('inverters', inverterId, values, opened)
 
     if (result.outcome === 'queued') {
       onClose()
@@ -187,7 +190,10 @@ export function StringDialog({
   const stringId = pvString ? String(pvString['id']) : null
   const name = text(pvString, 'designation')
 
-  async function submit(values: Draft): Promise<EditResult> {
+  // What the form had when it was opened, so that only what changed here is
+  // written, and a change somebody else made meanwhile stays
+  // (opengewerk/opengewerk#1057).
+  async function submit(values: Draft, opened?: Draft): Promise<EditResult> {
     const result =
       stringId === null
         ? await client.create('pv_strings', {
@@ -195,7 +201,7 @@ export function StringDialog({
             inverterId,
             position: nextPosition(strings),
           })
-        : await client.update('pv_strings', stringId, values)
+        : await client.update('pv_strings', stringId, values, opened)
 
     if (result.outcome === 'queued') {
       onClose()
@@ -268,7 +274,10 @@ export function ModuleDialog({
       ? ''
       : `Modul ${String(modules.findIndex((each) => String(each['id']) === itemId) + 1)}`
 
-  async function submit(values: Draft): Promise<EditResult> {
+  // What the form had when it was opened, so that only what changed here is
+  // written, and a change somebody else made meanwhile stays
+  // (opengewerk/opengewerk#1057).
+  async function submit(values: Draft, opened?: Draft): Promise<EditResult> {
     const result =
       itemId === null
         ? await client.create('pv_modules', {
@@ -276,7 +285,7 @@ export function ModuleDialog({
             pvStringId: stringId,
             position: nextPosition(modules),
           })
-        : await client.update('pv_modules', itemId, values)
+        : await client.update('pv_modules', itemId, values, opened)
 
     if (result.outcome === 'queued') {
       onClose()

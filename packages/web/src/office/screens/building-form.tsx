@@ -184,6 +184,9 @@ function BuildingForm({
   // In the order they were chosen, as the building holds them: saving a form
   // nobody ticked anything in changes nothing.
   const [kinds, setKinds] = useState<readonly string[]>(() => kindKeysOf(building))
+  // The kinds as the form was opened with them, beside what it had in its
+  // fields, for `update` to write only what changed here.
+  const [openedKinds] = useState<readonly string[]>(() => kindKeysOf(building))
   const asksArea = areas.length > 1
   const ofTheProperty = property['areaId']
   const fields: readonly FormField[] = asksArea
@@ -211,18 +214,24 @@ function BuildingForm({
   }
 
   /** What the form collected, as the route and the model take it. */
-  const wanted = (values: Readonly<Record<string, string>>) => ({
+  const wanted = (values: Readonly<Record<string, string>>, chosen: readonly string[] = kinds) => ({
     name: (values['name'] ?? '').trim(),
     shortCode: asTextOrNull(values['shortCode']),
-    kinds,
+    kinds: chosen,
     yearBuilt: yearOf(values['yearBuilt']),
     // Empty is the area of the property.
     ...(asksArea ? { ownAreaId: asTextOrNull(values['ownAreaId']) } : {}),
   })
 
-  async function save(values: Record<string, string>): Promise<EditResult> {
+  // What the form had when it was opened, so that only what changed here is
+  // written, and a change somebody else made meanwhile stays
+  // (opengewerk/opengewerk#1057).
+  async function save(
+    values: Record<string, string>,
+    opened: Record<string, string>,
+  ): Promise<EditResult> {
     const result = editing
-      ? await client.update('buildings', buildingId, wanted(values))
+      ? await client.update('buildings', buildingId, wanted(values), wanted(opened, openedKinds))
       : await makeAt(client, `/properties/${propertyId}/buildings`, wanted(values))
 
     if (result.outcome === 'queued') {

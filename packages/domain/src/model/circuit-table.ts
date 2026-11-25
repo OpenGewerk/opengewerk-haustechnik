@@ -7,8 +7,8 @@ import type { WorkedOutLimitKind } from './forms.js'
  * The measurements of a group over the circuits as a table (#350), the same
  * in the office and in the PDF of an evidence: the circuits board by board in
  * the order of the chart, a column for each measured value of the form, the
- * limit worked out of each circuit for the loop impedance, which no other
- * column shows, what else the block said, and under it where each limit comes
+ * limit worked out of each circuit where it differs from circuit to circuit
+ * (`withLimit`), what else the block said, and under it where each limit comes
  * from. Read from the frozen state alone.
  */
 
@@ -23,7 +23,11 @@ export interface CircuitColumn {
   readonly workedOut?: WorkedOutLimitKind
   /**
    * Whether the limit worked out of each circuit stands in a column beside
-   * it: the loop impedance, whose limit differs from circuit to circuit.
+   * it: the loop impedance, whose limit differs from circuit to circuit, and
+   * since version 2 of both tests of the installation the insulation and the
+   * tripping time, by the nominal voltage and the kind of RCD
+   * (opengewerk/opengewerk#1021). The tripping current needs none, the RCD in
+   * the words of the circuit names it.
    */
   readonly withLimit: boolean
 }
@@ -34,8 +38,8 @@ export interface CircuitValue {
   /** Whether it is outside its limit, which made a defect of it. */
   readonly outside: boolean
   /**
-   * The limit worked out of the circuit in short words, `≤ 2,87`, or
-   * `keiner`, in a column with its limit beside it; none in every other.
+   * The limit worked out of the circuit in short words, `≤ 2,875` or
+   * `130 bis 500`, or `keiner`, in a column with its limit beside it; none in every other.
    */
   readonly limit?: string
 }
@@ -96,8 +100,18 @@ function figureAndUnit(value: string | null): { figure: string; unit: string } {
     : { figure: value.slice(0, at), unit: value.slice(at + 1) }
 }
 
-/** A limit in the short words of a table: "höchstens 2,87 Ω" as "≤ 2,87". */
+/**
+ * A limit in the short words of a table, without its unit, which the head of
+ * the column names: "höchstens 2,875 Ω" as "≤ 2,875", and the range of a
+ * selective RCD, "zwischen 130 und 500 ms", as "130 bis 500".
+ */
 function shortBound(bound: string): string {
+  const range = /^zwischen (\S+) und (\S+) \S+$/.exec(bound)
+
+  if (range !== null) {
+    return `${range[1] ?? ''} bis ${range[2] ?? ''}`
+  }
+
   const signs: Readonly<Record<string, string>> = {
     höchstens: '≤',
     mindestens: '≥',
@@ -182,6 +196,13 @@ function limitsOf(answers: readonly StatedAnswer[], columns: readonly CircuitCol
   ]
 }
 
+/** The limits worked out of the circuit that differ from circuit to circuit (`CircuitColumn.withLimit`). */
+const limitPerCircuit: ReadonlySet<WorkedOutLimitKind> = new Set([
+  'loop_impedance',
+  'circuit_insulation',
+  'rcd_trip_time',
+])
+
 /** The table of the answers of one group over the circuits. */
 function tableOf(
   group: string,
@@ -197,7 +218,7 @@ function tableOf(
         symbol: symbolOf(answer.label),
         unit: figureAndUnit(answer.value).unit,
         ...(answer.workedOut === undefined ? {} : { workedOut: answer.workedOut }),
-        withLimit: answer.workedOut === 'loop_impedance',
+        withLimit: answer.workedOut !== undefined && limitPerCircuit.has(answer.workedOut),
       })
     }
   }

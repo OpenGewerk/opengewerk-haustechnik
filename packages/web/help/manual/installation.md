@@ -1,6 +1,6 @@
 # Installation
 
-OpenGewerk Haustechnik läuft auf einem eigenen Server in Docker. Gebraucht werden Docker mit Compose, ein Checkout des Repositorys mit seinem Submodul und ein Hostname, unter dem die Instanz im Browser erreichbar ist.
+OpenGewerk Haustechnik läuft auf einem eigenen Server in Docker. Gebraucht werden Docker Engine ab 28.3.3 mit Docker Compose ab 2.22, ein Checkout des Repositorys mit seinem Submodul und ein Hostname, unter dem die Instanz im Browser erreichbar ist.
 
 ## Schritt für Schritt
 

@@ -8,7 +8,7 @@ Wie ein Archiv verschlüsselt wird und wohin es gehört, steht in `docker/.env.e
 
 - Sichern, etwa vor einem Update: `docker compose -f docker/compose.yaml --profile backup run --rm backup backup.sh`
 - Prüfen, ob sich die letzte Sicherung lesen lässt: `docker compose -f docker/compose.yaml --profile backup run --rm backup verify.sh latest`
-- Zurückspielen: `docker compose -f docker/compose.yaml --profile backup run --rm backup restore.sh latest`
+- Zurückspielen: zuerst die Anwendung und die nächtliche Sicherung anhalten, `docker compose -f docker/compose.yaml stop app backup-schedule`, dann `docker compose -f docker/compose.yaml --profile backup run --rm backup restore.sh latest`, und erst wenn beides ohne Fehler durchlief, mit `sh docker/start.sh` starten. Das führt wie nach einem Update die Migrationen aus, falls die Sicherung von einer älteren Fassung stammt, und gibt der Anwendung ihre Anmeldung zurück. Verbinde die drei Befehle mit `&&`, dann läuft keiner, wenn der davor scheitert. Eine Datei, die in der Sicherung beschädigt ist, findet `restore.sh`, bevor es etwas ändert; Datenbank und Dateispeicher bleiben dann, wie sie waren, und du startest die Instanz mit `sh docker/start.sh` auf dem alten Stand oder nimmst eine andere Sicherung. Bricht es erst später ab, bleibt die Anwendung ausgesperrt. Das prüft `sh docker/start.sh` für dich: Ist ein Rückspielen auf halbem Weg stehen geblieben, startet es weder die Anwendung noch die nächtliche Sicherung und sagt das. Dann behebst du die Ursache und spielst die Sicherung noch einmal zurück.
 
 ## Beim Rückspielen
 

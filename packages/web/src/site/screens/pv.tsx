@@ -307,7 +307,10 @@ export function SiteInverterFormScreen() {
     return <NotTaking title={title} back={back} />
   }
 
-  async function submit(values: Draft): Promise<EditResult> {
+  // What the form had when it was opened, so that only what changed here is
+  // written, and a change somebody else made meanwhile stays
+  // (opengewerk/opengewerk#1057).
+  async function submit(values: Draft, opened?: Draft): Promise<EditResult> {
     const result =
       inverterId === undefined
         ? await client.create('inverters', {
@@ -315,7 +318,7 @@ export function SiteInverterFormScreen() {
             assetId,
             position: nextPosition(inverters),
           })
-        : await client.update('inverters', inverterId, values)
+        : await client.update('inverters', inverterId, values, opened)
 
     if (result.outcome === 'queued') {
       await navigate({ to: back.to })
@@ -390,7 +393,10 @@ export function SiteStringFormScreen() {
     return <NotTaking title={title} back={back} />
   }
 
-  async function submit(values: Draft): Promise<EditResult> {
+  // What the form had when it was opened, so that only what changed here is
+  // written, and a change somebody else made meanwhile stays
+  // (opengewerk/opengewerk#1057).
+  async function submit(values: Draft, opened?: Draft): Promise<EditResult> {
     const result =
       stringId === undefined
         ? await client.create('pv_strings', {
@@ -398,7 +404,7 @@ export function SiteStringFormScreen() {
             inverterId,
             position: nextPosition(strings),
           })
-        : await client.update('pv_strings', stringId, values)
+        : await client.update('pv_strings', stringId, values, opened)
 
     if (result.outcome === 'queued' && assetId !== undefined && inverterId !== undefined) {
       await navigate({ to: pvPlaces.string(assetId, inverterId, result.id) })
@@ -536,7 +542,7 @@ export function SiteModuleFormScreen() {
       onCancel={() => {
         void navigate({ to: back.to })
       }}
-      onSubmit={async (values) => {
+      onSubmit={async (values, opened) => {
         const result =
           moduleId === undefined
             ? await client.create('pv_modules', {
@@ -544,7 +550,7 @@ export function SiteModuleFormScreen() {
                 pvStringId: stringId,
                 position: nextPosition(modules),
               })
-            : await client.update('pv_modules', moduleId, values)
+            : await client.update('pv_modules', moduleId, values, opened)
 
         if (result.outcome === 'queued') {
           await navigate({ to: back.to })
@@ -573,10 +579,16 @@ function ModuleForm({
   readonly editing: boolean
   readonly back: { readonly to: string; readonly label: string }
   readonly onCancel: () => void
-  readonly onSubmit: (values: Draft) => Promise<EditResult>
+  /**
+   * Saves the values. `opened` is what the form would have handed when it was
+   * opened, or what it handed last and was taken, for `update` to write only
+   * what changed here (opengewerk/opengewerk#1057).
+   */
+  readonly onSubmit: (values: Draft, opened: Draft) => Promise<EditResult>
 }) {
   const formId = useId()
   const [typed, setTyped] = useState<TypedModule>(() => typedFrom(start))
+  const [opened, setOpened] = useState(() => readModule(typedFrom(start)).values)
   const [reading, setReading] = useState(false)
   // The reader stands in place of the form, so the form comes back anew when
   // it closes; its field takes the focus then, as at an asset (#132).
@@ -632,10 +644,12 @@ function ModuleForm({
     setWorking(true)
 
     try {
-      const result = await onSubmit(read.values)
+      const result = await onSubmit(read.values, opened)
 
       if (result.outcome === 'refused') {
         setTrouble(refusalFor(result))
+      } else {
+        setOpened(read.values)
       }
     } catch {
       setTrouble(sitePvWords.notKept)

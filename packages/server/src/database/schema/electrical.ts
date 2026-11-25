@@ -122,6 +122,7 @@ export const {
   overcurrentDevice,
   tripCharacteristic,
   rcdType,
+  circuitVoltageClass,
   cableInstallationMethod,
   distributionBoards,
   boardSections,

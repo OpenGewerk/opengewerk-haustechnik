@@ -176,6 +176,74 @@ describe('the table of the measurements on circuits (#350)', () => {
     ])
   })
 
+  it('gives the limit of each circuit beside the insulation and the tripping time of a test in version 2 (opengewerk/opengewerk#1021)', () => {
+    // F2 up to 500 V with an RCD without delay, F1 SELV with a selective RCD: the
+    // same values, judged by different limits, which the table says beside them.
+    const judged = (
+      circuit: string,
+      label: string,
+      value: string,
+      bound: string,
+      within: boolean,
+      workedOut: 'circuit_insulation' | 'rcd_trip_time',
+    ) =>
+      measured(
+        circuit,
+        label,
+        value,
+        {
+          text: `${within ? 'Innerhalb' : 'Außerhalb'} des Grenzwerts, ${bound}.`,
+          source: 'DIN VDE 0100-600',
+          within,
+          bound,
+        },
+        { workedOut },
+      )
+    const [table] = circuitTablesOf(
+      [
+        judged(
+          'c-f2',
+          'Isolationswiderstand Riso',
+          '0,70 MΩ',
+          'mindestens 1,00 MΩ',
+          false,
+          'circuit_insulation',
+        ),
+        judged(
+          'c-uv-f1',
+          'Isolationswiderstand Riso',
+          '0,70 MΩ',
+          'mindestens 0,50 MΩ',
+          true,
+          'circuit_insulation',
+        ),
+        judged('c-f2', 'Auslösezeit tA', '400 ms', 'höchstens 300 ms', false, 'rcd_trip_time'),
+        judged(
+          'c-uv-f1',
+          'Auslösezeit tA',
+          '400 ms',
+          'zwischen 130 und 500 ms',
+          true,
+          'rcd_trip_time',
+        ),
+      ],
+      circuits,
+    )
+
+    expect(table?.columns.map((column) => [column.symbol, column.withLimit])).toEqual([
+      ['Riso', true],
+      ['tA', true],
+    ])
+    expect(table?.boards[0]?.rows[1]?.values).toEqual([
+      { figure: '0,70', outside: true, limit: '≥ 1,00' },
+      { figure: '400', outside: true, limit: '≤ 300' },
+    ])
+    expect(table?.boards[1]?.rows[0]?.values).toEqual([
+      { figure: '0,70', outside: false, limit: '≥ 0,50' },
+      { figure: '400', outside: false, limit: '130 bis 500' },
+    ])
+  })
+
   it('has no table where no answer stands in the block of a circuit', () => {
     expect(circuitTablesOf(answers.slice(0, 1), circuits)).toEqual([])
   })

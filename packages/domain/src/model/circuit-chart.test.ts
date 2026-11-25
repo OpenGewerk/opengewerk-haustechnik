@@ -113,6 +113,29 @@ describe('the order of the circuit chart (#350)', () => {
   it('has no circuit without a board', () => {
     expect(circuitsInChartOrder([], sections, circuits)).toEqual([])
   })
+
+  it('keeps the nominal voltage and a selective RCD only where they are not the ordinary ones (opengewerk/opengewerk#1021)', () => {
+    const [unusual, ordinary, plain] = circuitsInChartOrder(
+      [board('b-main', 'HV 1', 0)],
+      [],
+      [
+        {
+          ...circuit('c-unusual', 'b-main', null, 'F1', 1),
+          voltageClass: 'selv_pelv',
+          rcdSelective: true,
+        },
+        {
+          ...circuit('c-ordinary', 'b-main', null, 'F2', 2),
+          voltageClass: 'up_to_500',
+          rcdSelective: false,
+        },
+        circuit('c-plain', 'b-main', null, 'F3', 3),
+      ],
+    )
+
+    expect(unusual).toMatchObject({ voltageClass: 'selv_pelv', rcdSelective: true })
+    expect(Object.keys(ordinary ?? {})).toEqual(Object.keys(plain ?? {}))
+  })
 })
 
 describe('what protects a circuit, in words (#350)', () => {
@@ -371,9 +394,11 @@ describe('a form over the circuits on the page that is signed (#350)', () => {
       },
     ],
   })
-  const pageOf = (formKey: string, given: FormVersions | null = catalogue) => {
-    const holding = held(formKey)
-
+  const pageOf = (
+    formKey: string,
+    given: FormVersions | null = catalogue,
+    holding = held(formKey),
+  ) => {
     return heldPageOf(
       {
         find: (entity, id) => holding[entity]?.find((each) => each['id'] === id) ?? null,
@@ -408,6 +433,40 @@ describe('a form over the circuits on the page that is signed (#350)', () => {
         place: 0,
       },
     ])
+  })
+
+  it('names the nominal voltage and a selective RCD only where they are not the ordinary ones, so that a page of before keeps its fingerprint (opengewerk/opengewerk#1021)', () => {
+    const before = held(measured.key)
+    const withCircuits = (
+      change: (circuit: HeldRecord) => HeldRecord,
+    ): Readonly<Record<string, readonly HeldRecord[]>> => ({
+      ...before,
+      circuits: (before['circuits'] ?? []).map(change),
+    })
+    const ordinary = withCircuits((each) => ({
+      ...each,
+      voltageClass: 'up_to_500',
+      rcdSelective: false,
+    }))
+    const unusual = withCircuits((each) =>
+      each['id'] === 'c-f1' ? { ...each, voltageClass: 'selv_pelv', rcdSelective: true } : each,
+    )
+
+    expect(canonicalForm(pageOf(measured.key, catalogue, ordinary))).toBe(
+      canonicalForm(pageOf(measured.key)),
+    )
+    expect(pageOf(measured.key, catalogue, unusual)?.circuits?.[0]).toStrictEqual({
+      id: 'c-f1',
+      designation: 'F1',
+      consumer: 'Licht',
+      tripCharacteristic: 'b',
+      ratedCurrentMilli: 10_000,
+      ratedResidualCurrentMilli: 30,
+      voltageClass: 'selv_pelv',
+      rcdSelective: true,
+      board: 'UV 1',
+      place: 1,
+    })
   })
 
   it('stays the page it was for a form without such a group, and without the catalogue', () => {
@@ -497,7 +556,7 @@ describe('the circuits in the evidence (#350)', () => {
         group: { label: 'Messen je Stromkreis', block: 2 },
         of: 'c-a3',
         workedOut: 'loop_impedance',
-        bound: 'höchstens 2,87 Ω',
+        bound: 'höchstens 2,875 Ω',
         within: false,
         value: '3,40 Ω',
       },

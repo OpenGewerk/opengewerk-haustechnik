@@ -456,6 +456,63 @@ describe('the page of an inverter', () => {
   })
 })
 
+describe('the forms of the PV structure (opengewerk/opengewerk#1057)', () => {
+  it.each([
+    {
+      what: 'an inverter',
+      button: 'Bearbeiten',
+      title: 'WR 1 bearbeiten',
+      entity: 'inverters',
+      record: wr1,
+      meanwhile: { manufacturer: 'Anderer Hersteller' },
+      field: /Modell/,
+      typed: 'BW 12.0',
+      sent: { model: 'BW 12.0' },
+    },
+    {
+      what: 'a string',
+      button: 'String 1 bearbeiten',
+      title: 'String 1 bearbeiten',
+      entity: 'pv_strings',
+      record: s1,
+      meanwhile: { tiltDeg: 30 },
+      field: /Bezeichnung/,
+      typed: 'String 1a',
+      sent: { designation: 'String 1a' },
+    },
+    {
+      what: 'a module',
+      button: 'Modul 1 in String 1 bearbeiten',
+      title: 'Modul 1 bearbeiten',
+      entity: 'pv_modules',
+      record: m1,
+      meanwhile: { serialNumber: 'BS4-2306-9999' },
+      field: /Modell/,
+      typed: 'BS 410 M',
+      sent: { model: 'BS 410 M' },
+    },
+  ])(
+    'of $what save only what they changed, and keep what another device set while they were open',
+    async ({ button, title, entity, record, meanwhile, field, typed, sent }) => {
+      const { client } = await mount(inverterAt)
+
+      fireEvent.click(await screen.findByRole('button', { name: button }))
+      const form = dialog(title)
+
+      server.put(entity, { ...record, ...meanwhile, version: 2 })
+      await client.synchronise()
+      fireEvent.change(form.getByLabelText(field), { target: { value: typed } })
+      fireEvent.click(form.getByRole('button', { name: 'Speichern' }))
+
+      await waitFor(() => {
+        expect(server.queued()).toHaveLength(1)
+      })
+      expect(server.queued()[0]?.values).toEqual(sent)
+      expect(server.row(entity, record.id)).toMatchObject(meanwhile)
+    },
+  )
+})
+
 describe('the rights at the PV structure', () => {
   it('offer nothing to add, change or move without the right to take stock of assets', async () => {
     await mount(inverterAt, 'technician', ['asset.record'])

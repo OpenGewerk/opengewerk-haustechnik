@@ -169,7 +169,7 @@ export function BoardDialog({
         starred
         submitLabel={boardId === null ? 'Hinzufügen' : 'Speichern'}
         onCancel={onClose}
-        onSubmit={async (values) => {
+        onSubmit={async (values, opened) => {
           const result =
             boardId === null
               ? await client.create('distribution_boards', {
@@ -178,10 +178,12 @@ export function BoardDialog({
                   assetId,
                   position: nextPosition(boards),
                 })
-              : await client.update('distribution_boards', boardId, {
-                  ...asBoard(values),
-                  ...asBoardPlace(values),
-                })
+              : await client.update(
+                  'distribution_boards',
+                  boardId,
+                  { ...asBoard(values), ...asBoardPlace(values) },
+                  { ...asBoard(opened), ...asBoardPlace(opened) },
+                )
 
           if (result.outcome === 'queued') {
             onClose()
@@ -249,7 +251,7 @@ export function SectionDialog({
         starred
         submitLabel={sectionId === null ? 'Hinzufügen' : 'Speichern'}
         onCancel={onClose}
-        onSubmit={async (values) => {
+        onSubmit={async (values, opened) => {
           const result =
             sectionId === null
               ? await client.create('board_sections', {
@@ -257,7 +259,12 @@ export function SectionDialog({
                   distributionBoardId: boardId,
                   position: nextPosition(sections),
                 })
-              : await client.update('board_sections', sectionId, asSection(values))
+              : await client.update(
+                  'board_sections',
+                  sectionId,
+                  asSection(values),
+                  asSection(opened),
+                )
 
           if (result.outcome === 'queued') {
             onClose()
@@ -341,7 +348,12 @@ export function CircuitDialog({
     return typeof value === 'string' && known.has(value) ? value : null
   }
 
-  async function submit(values: Draft): Promise<EditResult> {
+  // What the form had when it was opened, so that only what changed here is
+  // written, and a change somebody else made meanwhile stays
+  // (opengewerk/opengewerk#1057). `circuit` is the circuit as the dialog was
+  // opened with it, so a new place in a section comes only where this form
+  // moved it, and one moved elsewhere meanwhile keeps its place.
+  async function submit(values: Draft, opened?: Draft): Promise<EditResult> {
     const target = sectionOf(values)
     const others = circuits.filter((each) => String(each['id']) !== circuitId)
     const result =
@@ -351,12 +363,17 @@ export function CircuitDialog({
             distributionBoardId: boardId,
             position: nextPosition(inSection(others, target)),
           })
-        : await client.update('circuits', circuitId, {
-            ...values,
-            ...(sectionOf(circuit) === target
-              ? {}
-              : { position: nextPosition(inSection(others, target)) }),
-          })
+        : await client.update(
+            'circuits',
+            circuitId,
+            {
+              ...values,
+              ...(sectionOf(circuit) === target
+                ? {}
+                : { position: nextPosition(inSection(others, target)) }),
+            },
+            opened,
+          )
 
     if (result.outcome === 'queued') {
       onClose()
@@ -445,7 +462,7 @@ export function EquipmentDialog({
         starred
         submitLabel={itemId === null ? 'Hinzufügen' : 'Speichern'}
         onCancel={onClose}
-        onSubmit={async (values) => {
+        onSubmit={async (values, opened) => {
           const result =
             itemId === null
               ? await client.create('equipment', {
@@ -453,7 +470,7 @@ export function EquipmentDialog({
                   circuitId,
                   position: nextPosition(equipment),
                 })
-              : await client.update('equipment', itemId, asEquipment(values))
+              : await client.update('equipment', itemId, asEquipment(values), asEquipment(opened))
 
           if (result.outcome === 'queued') {
             onClose()

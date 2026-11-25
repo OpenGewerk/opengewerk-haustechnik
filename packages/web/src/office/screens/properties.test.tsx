@@ -1568,6 +1568,29 @@ describe('the form of a property there is', () => {
     expect(written).toEqual([])
   })
 
+  it('sends only what it changed, and keeps what somebody else set while it was open (opengewerk/opengewerk#1057)', async () => {
+    const user = userEvent.setup()
+    const changes = takingChanges()
+
+    await mount('/liegenschaften/p-school/bearbeiten')
+    const city = await screen.findByRole('textbox', { name: 'Ort' })
+
+    server.put('properties', { ...school, note: 'Schlüssel beim Hausmeister.', version: 2 })
+    await device.synchronise()
+    await user.clear(city)
+    await user.type(city, 'Beispielstadt')
+    await user.click(screen.getByRole('button', { name: 'Speichern' }))
+
+    await waitFor(() => {
+      expect(changes).toEqual([
+        { entity: 'properties', id: 'p-school', values: { city: 'Beispielstadt' } },
+      ])
+    })
+    expect(server.row('properties', 'p-school')).toMatchObject({
+      note: 'Schlüssel beim Hausmeister.',
+    })
+  })
+
   it('takes a note away when it is emptied', async () => {
     const user = userEvent.setup()
     const changes = takingChanges()

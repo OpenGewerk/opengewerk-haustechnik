@@ -86,6 +86,11 @@ const places: Readonly<Record<string, readonly Why[]>> = {
     ['sessions'],
   'upstream/opengewerk/packages/platform/server/src/authentication/authentication.ts#authPasskeys':
     [{ byHand: 'ein neuer Passkey, der sich nicht festhalten ließ' }],
+  // A session that ran out, and one whose access ended, goes with the sweep of the instance
+  // (#1029 and #1030 there).
+  'upstream/opengewerk/packages/platform/server/src/authentication/session-sweep.ts#authSessions': [
+    'sessions',
+  ],
   // The sessions without a second factor, once the account has the app (#360).
   'upstream/opengewerk/packages/platform/server/src/authentication/authentication.ts#authSessions':
     ['sessions'],

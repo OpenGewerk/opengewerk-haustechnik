@@ -25,7 +25,7 @@ Phase 1, das MVP für den Pilotbetrieb, ist abgeschlossen; die neueste Fassung s
 
 ## Schnellstart
 
-Gebraucht werden Docker und Docker Compose ab 2.22. Das Paket einer Fassung liegt auf der Seite ihres [Releases](https://github.com/OpenGewerk/opengewerk-haustechnik/releases), mit Prüfsumme und signierten Abbildern für x86_64 und ARM64:
+Gebraucht werden Docker Engine ab 28.3.3 und Docker Compose ab 2.22. Das Paket einer Fassung liegt auf der Seite ihres [Releases](https://github.com/OpenGewerk/opengewerk-haustechnik/releases), mit Prüfsumme und signierten Abbildern für x86_64 und ARM64:
 
 ```bash
 tar --no-same-owner -xzf opengewerk-haustechnik-<fassung>.tar.gz

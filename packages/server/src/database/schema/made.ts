@@ -103,6 +103,7 @@ export const madeWithLists: MadeByTheApplication = {
     overcurrentDevice: electricalOfTheBlocks.overcurrentDevice,
     tripCharacteristic: electricalOfTheBlocks.tripCharacteristic,
     rcdType: electricalOfTheBlocks.rcdType,
+    circuitVoltageClass: electricalOfTheBlocks.circuitVoltageClass,
     cableInstallationMethod: electricalOfTheBlocks.cableInstallationMethod,
     distributionBoards: electricalOfTheBlocks.distributionBoards,
     boardSections: electricalOfTheBlocks.boardSections,

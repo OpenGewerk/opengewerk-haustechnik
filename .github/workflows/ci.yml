@@ -723,6 +723,14 @@ jobs:
         working-directory: docker
         run: sh ../upstream/opengewerk/docker/test-stack.sh catch-up
 
+      - name: Eine Sicht statt einer Tabelle hält die Sicherung an
+        working-directory: docker
+        run: sh ../upstream/opengewerk/docker/test-stack.sh superuser-reads
+
+      - name: Nach einem halben Rückspielen starten weder Anwendung noch nächtliche Sicherung
+        working-directory: docker
+        run: sh ../upstream/opengewerk/docker/test-stack.sh half-restore
+
       - name: Protokolle bei einem Fehlschlag
         if: failure()
         working-directory: docker

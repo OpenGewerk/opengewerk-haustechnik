@@ -6,6 +6,7 @@ import {
   overcurrentText,
   type RecordState,
   rcdText,
+  voltageClassText,
 } from '@opengewerk/haustechnik-domain'
 import { Button, IconButton, isNarrow, Panel, Status, useBand } from '@opengewerk/platform-web'
 import {
@@ -36,6 +37,7 @@ import {
   useCircuits,
   useEquipment,
   useSections,
+  voltageClassOf,
 } from '../../app/electrical.js'
 import { CircuitSummary } from '../../app/circuit-summary.js'
 import { placePath } from '../../app/place-path.js'
@@ -628,6 +630,7 @@ function CircuitRow({
 function factsOf(circuit: RecordState, sections: readonly RecordState[]): Fact[] {
   const figures = figuresOf(circuit)
   const section = sections.find((each) => each['id'] === circuit['boardSectionId'])
+  const voltage = voltageClassText({ voltageClass: voltageClassOf(circuit) })
 
   return [
     {
@@ -635,6 +638,9 @@ function factsOf(circuit: RecordState, sections: readonly RecordState[]): Fact[]
       value: section ? text(section, 'designation') : structureWords.withoutSection,
     },
     { label: 'Verbraucher', value: maybeText(circuit, 'consumer') },
+    // Only where it is not the ordinary one, as on site, since the insulation
+    // is judged by it (opengewerk/opengewerk#1021).
+    ...(voltage === null ? [] : [{ label: 'Nennspannung', value: voltage }]),
     { label: 'Schutzeinrichtung', value: overcurrentText(figures) },
     { label: 'RCD', value: rcdText(figures) },
     { label: 'Leitung', value: cableText(figures) },

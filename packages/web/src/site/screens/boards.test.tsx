@@ -313,6 +313,58 @@ describe('taking the structure down on site', () => {
     })
   })
 
+  it('saves only what its form changed, and keeps what another device set while it was open (opengewerk/opengewerk#1057)', async () => {
+    const site = await mountSite(circuitAt, { server: server() })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Bearbeiten' }))
+    await screen.findByRole('heading', { level: 1, name: 'F3 bearbeiten' })
+    // Meanwhile the office marks the RCD selective, which the limits of a test go by.
+    site.server.put('circuits', { ...f3, rcdSelective: true, version: 2 })
+    await site.client.synchronise()
+    fireEvent.change(screen.getByLabelText(/Nennstrom/), { target: { value: '20' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Speichern' }))
+
+    await waitFor(() => {
+      expect(queued(site.server)).toHaveLength(1)
+    })
+    expect(queued(site.server)[0]?.values).toEqual({ ratedCurrentMilli: 20_000 })
+    expect(site.server.row('circuits', f3.id)).toMatchObject({ rcdSelective: true })
+  })
+
+  it('gives no place in the old section to a circuit another device moved while its form was open', async () => {
+    const site = await mountSite(circuitAt, { server: server() })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Bearbeiten' }))
+    await screen.findByRole('heading', { level: 1, name: 'F3 bearbeiten' })
+    site.server.put('circuits', { ...f3, boardSectionId: field2.id, position: 5, version: 2 })
+    await site.client.synchronise()
+    fireEvent.change(screen.getByLabelText(/Nennstrom/), { target: { value: '20' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Speichern' }))
+
+    await waitFor(() => {
+      expect(queued(site.server)).toHaveLength(1)
+    })
+    expect(queued(site.server)[0]?.values).toEqual({ ratedCurrentMilli: 20_000 })
+    expect(site.server.row('circuits', f3.id)).toMatchObject({
+      boardSectionId: field2.id,
+      position: 5,
+    })
+  })
+
+  it('gives a circuit its form moves into another section the next place there', async () => {
+    const site = await mountSite(circuitAt, { server: server() })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Bearbeiten' }))
+    await screen.findByRole('heading', { level: 1, name: 'F3 bearbeiten' })
+    fireEvent.change(screen.getByLabelText('Feld'), { target: { value: field2.id } })
+    fireEvent.click(screen.getByRole('button', { name: 'Speichern' }))
+
+    await waitFor(() => {
+      expect(queued(site.server)).toHaveLength(1)
+    })
+    expect(queued(site.server)[0]?.values).toEqual({ boardSectionId: field2.id, position: 1 })
+  })
+
   it('adds a section and a piece of equipment, each at the end of its list', async () => {
     const site = await mountSite(boardAt, { server: server() })
 
@@ -354,6 +406,69 @@ describe('taking the structure down on site', () => {
 
     expect(await screen.findByText('Die Bezeichnung fehlt.')).toBeTruthy()
     expect(queued(site.server)).toEqual([])
+  })
+})
+
+describe('the forms of the structure on site (opengewerk/opengewerk#1057)', () => {
+  it.each([
+    {
+      what: 'a board',
+      at: `${boardAt}/bearbeiten`,
+      title: 'Verteiler bearbeiten',
+      entity: 'distribution_boards',
+      record: uv1,
+      meanwhile: { location: 'E.16 Flur' },
+      field: /Bezeichnung/,
+      typed: 'UV 1a',
+      sent: { designation: 'UV 1a' },
+    },
+    {
+      what: 'a piece of equipment',
+      at: `${circuitAt}/betriebsmittel/${lamp.id}/bearbeiten`,
+      title: 'Werkbankleuchte bearbeiten',
+      entity: 'equipment',
+      record: lamp,
+      meanwhile: { manufacturer: 'Anderes Licht' },
+      field: /Typ/,
+      typed: 'WL 80',
+      sent: { model: 'WL 80' },
+    },
+  ])(
+    'of $what save only what they changed, and keep what another device set while they were open',
+    async ({ at, title, entity, record, meanwhile, field, typed, sent }) => {
+      const site = await mountSite(at, { server: server() })
+
+      await screen.findByRole('heading', { level: 1, name: title })
+      site.server.put(entity, { ...record, ...meanwhile, version: 2 })
+      await site.client.synchronise()
+      fireEvent.change(screen.getByLabelText(field), { target: { value: typed } })
+      fireEvent.click(screen.getByRole('button', { name: 'Speichern' }))
+
+      await waitFor(() => {
+        expect(queued(site.server)).toHaveLength(1)
+      })
+      expect(queued(site.server)[0]?.values).toEqual(sent)
+      expect(site.server.row(entity, record.id)).toMatchObject(meanwhile)
+    },
+  )
+
+  it('of a section write back no name another device gave it while it was open', async () => {
+    const site = await mountSite(`${boardAt}/felder/${field1.id}/bearbeiten`, { server: server() })
+
+    await screen.findByRole('heading', { level: 1, name: 'Feld 1 bearbeiten' })
+    site.server.put('board_sections', { ...field1, designation: 'Feld A', version: 2 })
+    await site.client.synchronise()
+    fireEvent.click(screen.getByRole('button', { name: 'Speichern' }))
+
+    await waitFor(() => {
+      expect(site.router.state.location.pathname).toBe(boardAt)
+    })
+    expect(
+      queued(site.server).filter(
+        (each) => each.entity === 'board_sections' && 'designation' in each.values,
+      ),
+    ).toEqual([])
+    expect(site.server.row('board_sections', field1.id)).toMatchObject({ designation: 'Feld A' })
   })
 })
 

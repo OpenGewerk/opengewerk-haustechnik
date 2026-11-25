@@ -807,6 +807,33 @@ describe('what is done to the chosen document', () => {
     ).toEqual({ title: 'Typenschild Aufzug', kind: 'operating_manual' })
   })
 
+  it('corrects only what its dialog changed, and keeps the kind another device set while it was open (opengewerk/opengewerk#1057)', async () => {
+    const { client } = await mount('technician', '/dokumente/d-plate')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bearbeiten' }))
+    const dialog = within(await screen.findByRole('dialog', { name: 'Dokument bearbeiten' }))
+
+    server.put('attachments', { ...plate, kind: 'operating_manual', version: 2 })
+    await client.synchronise()
+    fireEvent.change(dialog.getByRole('textbox', { name: /Bezeichnung/ }), {
+      target: { value: 'Typenschild Aufzug' },
+    })
+    fireEvent.click(dialog.getByRole('button', { name: 'Speichern' }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull()
+    })
+    await client.synchronise()
+
+    expect(
+      server
+        .operations()
+        .filter((operation) => operation.entity === 'attachments')
+        .flatMap((operation) => operation.patches.map((patch) => patch.field)),
+    ).toEqual(['title'])
+    expect(server.row('attachments', plate.id)).toMatchObject({ kind: 'operating_manual' })
+  })
+
   it('takes it out of the records after a question, and the list goes on without it', async () => {
     const { client, router } = await mount(
       'site_management',

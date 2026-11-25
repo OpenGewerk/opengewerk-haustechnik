@@ -1775,3 +1775,71 @@ describe('a room moved to another floor', () => {
     expect(written).toEqual([])
   })
 })
+
+describe('the forms of the places (opengewerk/opengewerk#1057)', () => {
+  it.each([
+    {
+      what: 'a building',
+      at: `/gebaeude/${house.id}/bearbeiten`,
+      title: 'Schulhaus bearbeiten',
+      entity: 'buildings',
+      record: house,
+      meanwhile: { yearBuilt: 1980 },
+      field: 'Kürzel',
+      typed: 'SH',
+      sent: { shortCode: 'SH' },
+    },
+    {
+      what: 'a floor',
+      at: `/geschosse/${ground.id}/bearbeiten`,
+      title: 'Erdgeschoss bearbeiten',
+      entity: 'floors',
+      record: ground,
+      meanwhile: { level: 2 },
+      field: 'Bezeichnung',
+      typed: 'EG',
+      sent: { name: 'EG' },
+    },
+  ])(
+    'of $what write only what they changed, and keep what somebody else set while they were open',
+    async ({ at, title, entity, record, meanwhile, field, typed, sent }) => {
+      const user = userEvent.setup()
+      const asked = takingChanges()
+      const { client } = await mountOffice(at, server, everything)
+
+      await screen.findByRole('heading', { level: 1, name: title })
+      server.put(entity, { ...record, ...meanwhile, version: 2 })
+      await client.synchronise()
+      await user.clear(screen.getByLabelText(new RegExp(field)))
+      await user.type(screen.getByLabelText(new RegExp(field)), typed)
+      await user.click(screen.getByRole('button', { name: 'Speichern' }))
+
+      await waitFor(() => {
+        expect(asked).toEqual([{ what: 'change', entity, id: record.id, values: sent }])
+      })
+      expect(server.row(entity, record.id)).toMatchObject(meanwhile)
+    },
+  )
+
+  it('of a room write only what it changed, and keep what somebody else set while it was open', async () => {
+    const user = userEvent.setup()
+    const { client } = await mountOffice(`/raeume/${boilerRoom.id}/bearbeiten`, server, everything)
+
+    await screen.findByRole('heading', { level: 1, name: /bearbeiten/ })
+    server.put('rooms', { ...boilerRoom, use: 'Technik', version: 2 })
+    await client.synchronise()
+    await user.clear(screen.getByLabelText(/Bezeichnung/))
+    await user.type(screen.getByLabelText(/Bezeichnung/), 'Kesselraum')
+    await user.click(screen.getByRole('button', { name: 'Speichern' }))
+
+    await waitFor(() => {
+      expect(server.operations().filter((operation) => operation.entity === 'rooms')).toHaveLength(
+        1,
+      )
+    })
+    const [sent] = server.operations().filter((operation) => operation.entity === 'rooms')
+
+    expect(sent?.patches.map((patch) => patch.field)).toEqual(['name'])
+    expect(server.row('rooms', boilerRoom.id)).toMatchObject({ use: 'Technik' })
+  })
+})

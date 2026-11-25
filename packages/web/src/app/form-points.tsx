@@ -7,11 +7,14 @@ import {
   forms,
   isStatedLimit,
   type IsoDate,
+  lowerEnd,
   type MeasurementField,
+  measuredNumber,
   meterFigure,
   photoColumns,
   photosOfAnswer,
   type RecordState,
+  type WorkedOutLimitKind,
   workedOutLimits,
 } from '@opengewerk/haustechnik-domain'
 import { Button, Choice, Field, TextArea } from '@opengewerk/platform-web'
@@ -205,22 +208,53 @@ export interface PointInputProps {
 }
 
 /**
- * A limit in thousandths as the head of a measured value shows it, rounded
- * to the places of the field towards the strict side as the engine writes it
- * in the verdict: 2,875 Ω as "≤ 2,87 Ω", never 2,88, so that the mark and the
- * sentence under it say the same; a lower bound and one a value has to stay
- * under round up.
+ * Whether a value has to reach the limit of its field, may reach it at most,
+ * or has to stay under it. A limit an operator states says its bound beside
+ * its kind (#112, below since #299); one from a rule is its kind (#93); one
+ * worked out of a circuit says its own (#350): the insulation is one a value
+ * has to reach (opengewerk/opengewerk#1021).
  */
-export function strictLimitMilli(
-  limitMilli: number,
-  decimals: number,
-  bound: 'at_least' | 'at_most' | 'below',
-): number {
-  const step = 10 ** Math.max(0, 3 - decimals)
+export function limitBound(
+  limit: MeasurementField['limit'],
+): 'at_least' | 'at_most' | 'below' | undefined {
+  if (limit === undefined) {
+    return undefined
+  }
 
-  return bound === 'at_most'
-    ? Math.floor(limitMilli / step) * step
-    : Math.ceil(limitMilli / step) * step
+  if (isStatedLimit(limit)) {
+    return limit.bound
+  }
+
+  if ('rule' in limit) {
+    return limit.kind
+  }
+
+  return Object.hasOwn(workedOutLimits, limit.kind)
+    ? workedOutLimits[limit.kind as WorkedOutLimitKind].bound
+    : undefined
+}
+
+/**
+ * The limit at the head of a measured value, as exactly as the sentence under
+ * it says it (opengewerk/opengewerk#1089): "≤ 2,875 Ω". A range has no sign:
+ * "130 bis 500 ms", or "über 15,0 bis 30,0 mA" where it begins just above a
+ * value the field shows (opengewerk/opengewerk#1021).
+ */
+export function limitAtHead(
+  field: Pick<MeasurementField, 'unit' | 'decimals'>,
+  bound: 'at_least' | 'at_most' | 'below',
+  limitMilli: number,
+  fromMilli?: number,
+): string {
+  const written = forms.formatMeasured(limitMilli, field.unit, field.decimals)
+
+  if (fromMilli === undefined) {
+    return limitMark(bound, written)
+  }
+
+  const start = lowerEnd(fromMilli, field.decimals)
+
+  return `${start.above ? 'über ' : ''}${measuredNumber(start.milli, field.decimals)} bis ${written}`
 }
 
 /**
@@ -552,27 +586,11 @@ function MeasurementInput(props: PointInputProps & { readonly field: Measurement
     }
   })
   const unit = unitSign(field)
-  // A limit an operator states says its bound beside its kind (#112, below
-  // since #299); one from a rule is its kind, at least, at most or below (#93);
-  // one worked out of a circuit is an upper one (#350).
-  const bound = isStatedLimit(field.limit)
-    ? field.limit.bound
-    : field.limit !== undefined && 'rule' in field.limit
-      ? field.limit.kind
-      : field.limit !== undefined && Object.hasOwn(workedOutLimits, field.limit.kind)
-        ? 'at_most'
-        : undefined
+  const bound = limitBound(field.limit)
   const limit =
     verdict === null || verdict.limitMilli === null || bound === undefined
       ? undefined
-      : limitMark(
-          bound,
-          forms.formatMeasured(
-            strictLimitMilli(verdict.limitMilli, field.decimals, bound),
-            field.unit,
-            field.decimals,
-          ),
-        )
+      : limitAtHead(field, bound, verdict.limitMilli, verdict.fromMilli)
 
   return (
     <div className="flex min-w-0 flex-col gap-3.5">

@@ -373,6 +373,34 @@ describe('a test of the electrical installation measured on its circuits (#350)'
     ).toEqual(['HV 1 Q1', 'HV 1 F5', 'UV 1 F1', 'UV 1 F3'])
   })
 
+  it('names the nominal voltage and a selective RCD of a circuit on both pages alike (opengewerk/opengewerk#1021)', async () => {
+    const f5 = circuitIds['F5'] ?? ''
+
+    await admin.query(
+      `update circuits set voltage_class = 'selv_pelv', rcd_type = 'a', rcd_selective = true
+       where id = $1`,
+      [f5],
+    )
+
+    try {
+      const server = await serverPage()
+      const device = await devicePage()
+
+      expect(server.circuits?.find((each) => each.id === f5)).toMatchObject({
+        voltageClass: 'selv_pelv',
+        rcdSelective: true,
+      })
+      expect(device).not.toBeNull()
+      expect(pageFingerprint(device ?? server)).toBe(pageFingerprint(server))
+    } finally {
+      await admin.query(
+        `update circuits set voltage_class = 'up_to_500', rcd_type = null, rcd_selective = false
+         where id = $1`,
+        [f5],
+      )
+    }
+  })
+
   it('writes a defect at the installation with the circuit, with the signature', async () => {
     const page = await serverPage()
 
@@ -434,7 +462,7 @@ describe('a test of the electrical installation measured on its circuits (#350)'
       (answer) => answer.circuit === circuitIds['F3'] && answer.label === 'Schleifenimpedanz Zs',
     )
 
-    expect(zs?.limit).toMatchObject({ bound: 'höchstens 2,87 Ω', within: false })
+    expect(zs?.limit).toMatchObject({ bound: 'höchstens 2,875 Ω', within: false })
     expect(zs?.workedOut).toBe('loop_impedance')
 
     const { html } = evidencePrintJob(state, rows[0]?.fingerprint ?? '', [], null)
@@ -447,7 +475,7 @@ describe('a test of the electrical installation measured on its circuits (#350)'
       '<td><strong>F3</strong> Steckdosen Werkbank</td><td class="muted protection">B 16 A, RCD 30 mA</td>',
     )
     expect(html).toContain('<td class="figure"><strong class="out">3,40</strong></td>')
-    expect(html).toContain('<td class="figure muted">≤ 2,87</td>')
+    expect(html).toContain('<td class="figure muted">≤ 2,875</td>')
     expect(html).toContain('Zs aus Charakteristik und Nennstrom (DIN VDE 0100-410')
     expect(html).toContain('RPE ohne Grenzwert')
     // The answers of the circuits stand in the table and not once more as points.

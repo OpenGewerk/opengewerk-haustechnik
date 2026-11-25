@@ -111,9 +111,16 @@ Ihre Gruppe "Messen je Stromkreis" hat einen Block für jeden Stromkreis der Anl
 Stromkreisverzeichnis und keinen weiteren: Schutzleiter RPE, Isolationswiderstand Riso,
 Schleifenimpedanz Zs, Auslösestrom IΔ und Auslösezeit tΔ, dazu der Prüfpunkt "Stromkreis in
 Ordnung" und eine Bemerkung. Vor der Unterschrift braucht jeder Stromkreis seinen Prüfpunkt. Die
-Grenzwerte stehen in `regeln/vde.json`, mit denselben Werten wie im Paket Elektro der Handwerkersoftware
-OpenGewerk und je Regel mit Norm, Ausgabe und Abschnitt: der Isolationswiderstand mindestens 1 MΩ, die Auslösezeit höchstens
-300 ms. Die Schleifenimpedanz und der Auslösestrom werden aus dem Stromkreis berechnet, die
+Grenzwerte stehen in `regeln/vde.json`, je Regel mit Norm, Ausgabe und Abschnitt. In Fassung 1 beider
+Formulare gelten dieselben Werte wie im Paket Elektro der Handwerkersoftware OpenGewerk: der
+Isolationswiderstand mindestens 1 MΩ, die Auslösezeit höchstens 300 ms. Seit Fassung 2 (Paket 1.6.0)
+kommen auch sie aus dem Stromkreis: die Isolation nach seiner Nennspannung nach Tabelle 6.1 der
+DIN VDE 0100-600 (SELV und PELV mindestens 0,5 MΩ, sonst 1 MΩ), die Auslösezeit nach der Art seines
+RCD (selektiv 130 bis 500 ms, sonst höchstens 300 ms). Das gilt vorerst auch für die wiederkehrende
+Prüfung, also mit den strengeren Werten der Erstprüfung. Nach Tabelle 11 der DGUV Information 203-072,
+nach der OpenGewerk die Wiederholungsprüfung beurteilt, genügen dort für SELV und PELV 0,25 MΩ, sonst
+gilt ein Mindestwert je Volt; die Haustechnik übernimmt das mit #630. Die
+Schleifenimpedanz und der Auslösestrom werden aus dem Stromkreis berechnet, die
 Schleifenimpedanz aus der Nennspannung und dem Auslösestrom der Charakteristik B, C oder D bei
 seinem Nennstrom, der Auslösestrom aus seinem Bemessungsdifferenzstrom. Ein Messwert außerhalb seines
 Grenzwerts wird ein Mangel an der Anlage, mit dem Stromkreis, an dem er gemessen wurde. Alle

@@ -457,6 +457,22 @@ describe('the page of a board', () => {
     expect(screen.getByRole('link', { name: /^F4/ }).getAttribute('aria-current')).toBeNull()
   })
 
+  it('names the nominal voltage of a circuit that is not up to 500 V, as on site (opengewerk/opengewerk#1021)', async () => {
+    server.put('circuits', { ...f3, voltageClass: 'selv_pelv' })
+    await mount(circuitAt)
+    const side = within(await screen.findByRole('region', { name: 'Stromkreis' }))
+
+    await side.findByText('Steckdosen Werkbank', { selector: 'span' })
+    expect(
+      side
+        .getAllByRole('term')
+        .map((term, index) => [
+          term.textContent,
+          side.getAllByRole('definition')[index]?.textContent,
+        ]),
+    ).toContainEqual(['Nennspannung', 'SELV oder PELV'])
+  })
+
   it('adds a circuit to the section it was asked from, with its board and section and nothing of the place', async () => {
     await mount(boardAt)
 
@@ -511,6 +527,58 @@ describe('the page of a board', () => {
       values: { ratedCurrentMilli: 20_000 },
     })
     expect(server.queued()[0]?.values).not.toHaveProperty('position')
+  })
+
+  it('saves only what its form changed, and keeps what another device set while it was open (opengewerk/opengewerk#1057)', async () => {
+    const { client } = await mount(circuitAt)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'F3 bearbeiten' }))
+    const form = dialog('F3 Steckdosen Werkbank bearbeiten')
+
+    // Meanwhile somebody else marks the RCD selective, which the limits of a test go by.
+    server.put('circuits', { ...f3, rcdSelective: true, version: 2 })
+    await client.synchronise()
+    fireEvent.change(form.getByLabelText('Nennstrom in A'), { target: { value: '20' } })
+    fireEvent.click(form.getByRole('button', { name: 'Speichern' }))
+
+    await waitFor(() => {
+      expect(server.queued()).toHaveLength(1)
+    })
+    expect(server.queued()[0]?.values).toEqual({ ratedCurrentMilli: 20_000 })
+    expect(server.row('circuits', f3.id)).toMatchObject({ rcdSelective: true })
+  })
+
+  it('gives no place in the old section to a circuit another device moved while its form was open', async () => {
+    const { client } = await mount(circuitAt)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'F3 bearbeiten' }))
+    const form = dialog('F3 Steckdosen Werkbank bearbeiten')
+
+    server.put('circuits', { ...f3, boardSectionId: field2.id, position: 5, version: 2 })
+    await client.synchronise()
+    fireEvent.change(form.getByLabelText('Nennstrom in A'), { target: { value: '20' } })
+    fireEvent.click(form.getByRole('button', { name: 'Speichern' }))
+
+    await waitFor(() => {
+      expect(server.queued()).toHaveLength(1)
+    })
+    expect(server.queued()[0]?.values).toEqual({ ratedCurrentMilli: 20_000 })
+    expect(server.row('circuits', f3.id)).toMatchObject({ boardSectionId: field2.id, position: 5 })
+  })
+
+  it('gives a circuit its form moves into another section the next place there', async () => {
+    await mount(circuitAt)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'F3 bearbeiten' }))
+    const form = dialog('F3 Steckdosen Werkbank bearbeiten')
+
+    fireEvent.change(form.getByLabelText('Feld'), { target: { value: field2.id } })
+    fireEvent.click(form.getByRole('button', { name: 'Speichern' }))
+
+    await waitFor(() => {
+      expect(server.queued()).toHaveLength(1)
+    })
+    expect(server.queued()[0]?.values).toEqual({ boardSectionId: field2.id, position: 1 })
   })
 
   it('offers the curves that go with the device, and no other', async () => {
@@ -575,6 +643,73 @@ describe('the page of a board', () => {
       { entity: 'circuits', kind: 'update', id: f2.id, values: { position: 1 } },
       { entity: 'circuits', kind: 'update', id: f10.id, values: { position: 2 } },
     ])
+  })
+})
+
+describe('the forms of the structure (opengewerk/opengewerk#1057)', () => {
+  it.each([
+    {
+      what: 'a board',
+      button: 'Bearbeiten',
+      title: 'UV 1 bearbeiten',
+      entity: 'distribution_boards',
+      record: uv1,
+      meanwhile: { location: 'E.16 Flur' },
+      field: /Bezeichnung/,
+      typed: 'UV 1a',
+      sent: { designation: 'UV 1a' },
+    },
+    {
+      what: 'a piece of equipment',
+      button: 'Werkbankleuchte bearbeiten',
+      title: 'Werkbankleuchte bearbeiten',
+      entity: 'equipment',
+      record: lamp,
+      meanwhile: { manufacturer: 'Anderes Licht' },
+      field: /Typ/,
+      typed: 'WL 80',
+      sent: { model: 'WL 80' },
+    },
+  ])(
+    'of $what save only what they changed, and keep what another device set while they were open',
+    async ({ button, title, entity, record, meanwhile, field, typed, sent }) => {
+      const { client } = await mount(circuitAt)
+
+      fireEvent.click(await screen.findByRole('button', { name: button }))
+      const form = dialog(title)
+
+      server.put(entity, { ...record, ...meanwhile, version: 2 })
+      await client.synchronise()
+      fireEvent.change(form.getByLabelText(field), { target: { value: typed } })
+      fireEvent.click(form.getByRole('button', { name: 'Speichern' }))
+
+      await waitFor(() => {
+        expect(server.queued()).toHaveLength(1)
+      })
+      expect(server.queued()[0]?.values).toEqual(sent)
+      expect(server.row(entity, record.id)).toMatchObject(meanwhile)
+    },
+  )
+
+  it('of a section write back no name another device gave it while it was open', async () => {
+    const { client } = await mount(circuitAt)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Feld 1 bearbeiten' }))
+    const form = dialog('Feld 1 bearbeiten')
+
+    server.put('board_sections', { ...field1, designation: 'Feld A', version: 2 })
+    await client.synchronise()
+    fireEvent.click(form.getByRole('button', { name: 'Speichern' }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Feld 1 bearbeiten' })).toBeNull()
+    })
+    expect(
+      server
+        .queued()
+        .filter((each) => each.entity === 'board_sections' && 'designation' in each.values),
+    ).toEqual([])
+    expect(server.row('board_sections', field1.id)).toMatchObject({ designation: 'Feld A' })
   })
 })
 

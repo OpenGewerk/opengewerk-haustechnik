@@ -441,13 +441,22 @@ function SitePartForm({
   readonly fields: readonly FormField[]
   readonly record?: RecordState | null
   readonly submitLabel: string
-  readonly onSubmit: (values: Record<string, string>) => Promise<EditResult>
+  /**
+   * Saves the values. `opened` is what the form had when it was opened, or
+   * what it handed last and was taken, for `update` to write only what
+   * changed here (opengewerk/opengewerk#1057).
+   */
+  readonly onSubmit: (
+    values: Record<string, string>,
+    opened: Record<string, string>,
+  ) => Promise<EditResult>
   readonly onCancel: () => void
 }) {
   const formId = useId()
   const [values, setValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(fields.map((field) => [field.name, heldIn(record, field)])),
   )
+  const [opened, setOpened] = useState(values)
   const [missing, setMissing] = useState(false)
   const [trouble, setTrouble] = useState<string | null>(null)
   const [working, setWorking] = useState(false)
@@ -467,10 +476,12 @@ function SitePartForm({
     setWorking(true)
 
     try {
-      const result = await onSubmit(values)
+      const result = await onSubmit(values, opened)
 
       if (result.outcome === 'refused') {
         setTrouble(refusalFor(result))
+      } else {
+        setOpened(values)
       }
     } catch {
       setTrouble(siteStructureWords.notKept)
@@ -618,7 +629,7 @@ export function SiteBoardFormScreen() {
           onCancel={() => {
             void navigate({ to: back.to })
           }}
-          onSubmit={async (values) => {
+          onSubmit={async (values, opened) => {
             const result =
               boardId === undefined
                 ? await client.create('distribution_boards', {
@@ -627,10 +638,12 @@ export function SiteBoardFormScreen() {
                     assetId,
                     position: nextPosition(boards),
                   })
-                : await client.update('distribution_boards', boardId, {
-                    ...asBoard(values),
-                    ...asBoardPlace(values),
-                  })
+                : await client.update(
+                    'distribution_boards',
+                    boardId,
+                    { ...asBoard(values), ...asBoardPlace(values) },
+                    { ...asBoard(opened), ...asBoardPlace(opened) },
+                  )
 
             if (result.outcome === 'queued') {
               await navigate({ to: structurePlaces.board(assetId, result.id) })
@@ -696,7 +709,7 @@ export function SiteSectionFormScreen() {
           onCancel={() => {
             void navigate({ to: back.to })
           }}
-          onSubmit={async (values) => {
+          onSubmit={async (values, opened) => {
             const result =
               sectionId === undefined
                 ? await client.create('board_sections', {
@@ -704,7 +717,12 @@ export function SiteSectionFormScreen() {
                     distributionBoardId: boardId,
                     position: nextPosition(sections),
                   })
-                : await client.update('board_sections', sectionId, asSection(values))
+                : await client.update(
+                    'board_sections',
+                    sectionId,
+                    asSection(values),
+                    asSection(opened),
+                  )
 
             if (result.outcome === 'queued') {
               await navigate({ to: back.to })
@@ -786,7 +804,11 @@ export function SiteCircuitFormScreen() {
   }
   const last = sections.at(-1)
 
-  async function submit(values: Draft): Promise<EditResult> {
+  // What the form had when it was opened, so that only what changed here is
+  // written, and a change somebody else made meanwhile stays
+  // (opengewerk/opengewerk#1057). A new place in a section only where this
+  // form moved the circuit: one moved elsewhere meanwhile keeps its place.
+  async function submit(values: Draft, opened?: Draft): Promise<EditResult> {
     const target = sectionOf(values)
     const others = circuits.filter((each) => String(each['id']) !== circuitId)
     const result =
@@ -796,12 +818,17 @@ export function SiteCircuitFormScreen() {
             distributionBoardId: boardId,
             position: nextPosition(inSection(others, target)),
           })
-        : await client.update('circuits', circuitId, {
-            ...values,
-            ...(sectionOf(circuit) === target
-              ? {}
-              : { position: nextPosition(inSection(others, target)) }),
-          })
+        : await client.update(
+            'circuits',
+            circuitId,
+            {
+              ...values,
+              ...(sectionOf(opened ?? circuit) === target
+                ? {}
+                : { position: nextPosition(inSection(others, target)) }),
+            },
+            opened,
+          )
 
     if (result.outcome === 'queued' && assetId !== undefined && boardId !== undefined) {
       await navigate({
@@ -911,7 +938,7 @@ export function SiteEquipmentFormScreen() {
           onCancel={() => {
             void navigate({ to: back.to })
           }}
-          onSubmit={async (values) => {
+          onSubmit={async (values, opened) => {
             const result =
               equipmentId === undefined
                 ? await client.create('equipment', {
@@ -919,7 +946,12 @@ export function SiteEquipmentFormScreen() {
                     circuitId,
                     position: nextPosition(equipment),
                   })
-                : await client.update('equipment', equipmentId, asEquipment(values))
+                : await client.update(
+                    'equipment',
+                    equipmentId,
+                    asEquipment(values),
+                    asEquipment(opened),
+                  )
 
             if (result.outcome === 'queued') {
               await navigate({ to: back.to })

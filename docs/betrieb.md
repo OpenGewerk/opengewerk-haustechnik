@@ -8,6 +8,8 @@ Eine Installation startet mit einem Befehl, aus einem Checkout mit dem Submodul 
 sh docker/start.sh
 ```
 
+Gebraucht werden Docker Engine ab 28.3.3 und Docker Compose ab 2.22; mit einer älteren Engine bricht `start.sh` ab, bevor es etwas holt oder einrichtet, beim ersten Start wie bei einem Update und nach dem Rückspielen. Vor 28.0.0 erreichen Rechner im selben Netz Ports, die nur auf `127.0.0.1` liegen, und 28.2.0 bis 28.3.2 öffnen sie nach einem Neuladen von firewalld wieder (CVE-2025-54388).
+
 Beim ersten Mal legt das Skript `docker/.env` an, erzeugt jeden Schlüssel und fragt nach der Adresse, unter der die Instanz im Browser geöffnet wird; ohne Terminal kommt sie aus `HAUSTECHNIK_ADDRESS`. Ausgegeben werden nur Namen, nie ein Wert. Danach baut es das Abbild, spielt die Migrationen ein und startet erst dann die Anwendung, in der Reihenfolge eines Updates. Eine leere Instanz zeigt im Browser die Ersteinrichtung, die nach dem Einrichtungscode aus `docker/.env` fragt und den Betreiber, das erste Konto und dessen zweiten Faktor anlegt. Die Skripte dahinter sind die des Fundaments (`upstream/opengewerk/docker`); was sie über diese Anwendung wissen müssen, steht in `docker/application.env` und `docker/compose.yaml`.
 
 Ein Update ist derselbe Befehl, nach `git pull` und `git submodule update --init`. Er baut das Abbild neu, migriert und tauscht erst danach die laufenden Container; scheitert die Migration, arbeitet die Instanz auf dem Stand davor weiter.
@@ -18,13 +20,22 @@ Ein Update ist derselbe Befehl, nach `git pull` und `git submodule update --init
 
 **Dateien und PDFs.** Was ein Betreiber ablegt, liegt im Dateispeicher, einem eigenen Volume (`files`), unter der Prüfsumme seines Inhalts; die Datenbank hält dazu je Betreiber eine Zeile. Jede Sicherung nimmt Datenbank und Dateispeicher zusammen mit, und das Rückspielen prüft jede Datei gegen ihren Namen. Ein PDF druckt der Renderer, ein Chromium in einem eigenen Container, auf derselben festen Fassung wie im Fundament. Er hängt in einem eigenen, internen Netz allein mit der Anwendung und erreicht weder die Datenbank noch das Internet (opengewerk#686). Er startet von Haus aus mit, weil die Vorlage `COMPOSE_PROFILES=renderer` setzt, und braucht rund 340 MB Arbeitsspeicher und knapp 4 GB auf der Platte. Wer nie ein PDF braucht, schaltet ihn in `docker/.env` mit einem leeren `COMPOSE_PROFILES=` ab; alles andere läuft dann weiter, und wer ein PDF verlangt, bekommt einen Satz, der das sagt. Eine Installation von vor dem Renderer bekommt seine beiden Zeilen beim nächsten `sh docker/start.sh` in ihre `.env`. Die Bytes einer Datei, auf die kein Betreiber mehr verweist und die seit einem Tag niemand abgelegt hat, nimmt die Anwendung einmal am Tag aus dem Speicher, dazu Reste abgebrochener Schreibvorgänge (opengewerk#657); eine Sicherung, die eine solche Datei noch enthält, bringt sie mit ihrer Zeile zurück, und eine ohne Zeile geht am nächsten Tag wieder. Eine geschlossene Instanz räumt nicht auf.
 
-Die Sicherung läuft jede Nacht von selbst, zu der Uhrzeit, die der Bereich der Instanz festlegt, und holt eine verpasste nach. Von Hand, etwa vor einem Update, und zum Rückspielen:
+Die Sicherung läuft jede Nacht von selbst, zu der Uhrzeit, die der Bereich der Instanz festlegt, und holt eine verpasste nach. Von Hand sichern, etwa vor einem Update, und eine Sicherung prüfen:
 
 ```bash
 docker compose -f docker/compose.yaml --profile backup run --rm backup backup.sh
-docker compose -f docker/compose.yaml --profile backup run --rm backup restore.sh latest
 docker compose -f docker/compose.yaml --profile backup run --rm backup verify.sh latest
 ```
+
+Zum Rückspielen werden zuerst die Anwendung und die nächtliche Sicherung angehalten, dann wird zurückgespielt, und erst wenn beides ohne Fehler durchlief, startet `sh docker/start.sh` die Instanz wieder (#628). Das führt wie nach einem Update die Migrationen aus, falls die Sicherung von einer älteren Fassung stammt. Die Anmeldung, die `restore.sh` der Anwendung für die Dauer des Rückspielens nimmt, gibt es nach einem vollständigen Lauf selbst zurück, nach einer älteren Sicherung aber erst nach diesen Migrationen:
+
+```bash
+docker compose -f docker/compose.yaml stop app backup-schedule &&
+  docker compose -f docker/compose.yaml --profile backup run --rm backup restore.sh latest &&
+  sh docker/start.sh
+```
+
+Eine Datei, die in der Sicherung beschädigt ist, findet `restore.sh`, bevor es etwas ändert; Datenbank und Dateispeicher bleiben dann, wie sie waren, und `sh docker/start.sh` startet die Instanz auf dem alten Stand, oder es wird eine andere Sicherung zurückgespielt. Bleibt ein Rückspielen dagegen auf halbem Weg stehen, startet `sh docker/start.sh` weder die Anwendung noch die nächtliche Sicherung und sagt das, und eine Sicherung von Hand lehnt `backup.sh` ebenso ab, damit kein halber Stand zur neuesten Sicherung wird. Dann die Ursache beheben und die drei Befehle oben noch einmal ausführen; ihre Anmeldung bekommt die Anwendung erst mit einem vollständigen Lauf zurück.
 
 Wie ein Archiv verschlüsselt wird und wohin es gehört, steht in `docker/.env.example`. Die Archive heißen nach der Datenbank (`haustechnik-<zeit>.tar.gz`), ein Ziel lässt sich also mit einer Installation von OpenGewerk teilen: jede Anwendung findet, behält und löscht nur ihre eigenen. Das gilt auch für ein Archiv, das statt `latest` mit seinem Namen genannt wird: eines der anderen Anwendung lehnen `restore.sh` und `verify.sh` ab, bevor sie die Datenbank fragen.
 
