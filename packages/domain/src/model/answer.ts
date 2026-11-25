@@ -758,7 +758,9 @@ export function answerVerdict(
     // a block whose circuit the chart no longer has as well, as in OpenGewerk:
     // it was measured in them all the same. Without any, such a block gets an
     // empty item, which every calculator reads as it reads none: each takes
-    // the facts it needs by optional access and has no limit without them.
+    // what it needs by optional access and falls back as without an item, to
+    // no limit for Zs and IΔ, else to up to 500 V, an RCD without delay and
+    // 230 V, dry, in a TN or TT system.
     item:
       circuit === null
         ? context.conditions === undefined
