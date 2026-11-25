@@ -720,6 +720,10 @@ export interface AnswersContext extends LimitContext {
    * answer of the activity with `measuringConditionsIn`: the environment in
    * its block, the earthing system and the nominal voltage in the head.
    * Without them a block is judged dry, in a TN or TT system at 230 V.
+   * They are for judging one answer at a time, as the device does at each
+   * point. `answersMissing`, `answerFindings` and `statedAnswers` are given
+   * every answer of the activity and gather the conditions from those
+   * themselves, so that they judge by the very answers they are given.
    */
   readonly conditionsOf?: MeasuringConditionsOf | null
 }
@@ -752,7 +756,9 @@ export function answerVerdict(
     on: context.on,
     // The conditions the circuit was measured in go with it (#630), and with
     // a block whose circuit the chart no longer has as well, as in OpenGewerk:
-    // it was measured in them all the same.
+    // it was measured in them all the same. Without any, such a block gets an
+    // empty item, which every calculator reads as it reads none: each takes
+    // the facts it needs by optional access and has no limit without them.
     item:
       circuit === null
         ? context.conditions === undefined
