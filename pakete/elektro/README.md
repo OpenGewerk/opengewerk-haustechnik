@@ -116,8 +116,10 @@ Formulare gelten dieselben Werte wie im Paket Elektro der Handwerkersoftware Ope
 Isolationswiderstand mindestens 1 MΩ, die Auslösezeit höchstens 300 ms. Seit Fassung 2 (Paket 1.6.0)
 kommen auch sie aus dem Stromkreis: die Isolation nach seiner Nennspannung nach Tabelle 6.1 der
 DIN VDE 0100-600 (SELV und PELV mindestens 0,5 MΩ, sonst 1 MΩ), die Auslösezeit nach der Art seines
-RCD (selektiv 130 bis 500 ms, sonst höchstens 300 ms). Das gilt auch für die wiederkehrende Prüfung;
-OpenGewerk beurteilt die Isolation dort nach Tabelle 11 der DGUV Information 203-072 (#630). Die
+RCD (selektiv 130 bis 500 ms, sonst höchstens 300 ms). Das gilt vorerst auch für die wiederkehrende
+Prüfung, also mit den strengeren Werten der Erstprüfung. Nach Tabelle 11 der DGUV Information 203-072,
+nach der OpenGewerk die Wiederholungsprüfung beurteilt, genügen dort für SELV und PELV 0,25 MΩ, sonst
+gilt ein Mindestwert je Volt; die Haustechnik übernimmt das mit #630. Die
 Schleifenimpedanz und der Auslösestrom werden aus dem Stromkreis berechnet, die
 Schleifenimpedanz aus der Nennspannung und dem Auslösestrom der Charakteristik B, C oder D bei
 seinem Nennstrom, der Auslösestrom aus seinem Bemessungsdifferenzstrom. Ein Messwert außerhalb seines
