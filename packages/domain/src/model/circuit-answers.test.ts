@@ -671,7 +671,11 @@ describe('the insulation of the recurring test after table 11 (#630)', () => {
 
     expect(verdict(400_000, 'up_to_500')).toMatchObject({ within: false, limitMilli: 400 })
     expect(verdict(500_000, 'up_to_500')).toMatchObject({ within: false, limitMilli: 500 })
-    expect(verdict(690_000, 'up_to_500')).toMatchObject({ within: null, limitMilli: null })
+    expect(verdict(690_000, 'up_to_500')).toMatchObject({
+      within: null,
+      limitMilli: null,
+      text: 'Die Nennspannung des Protokolls liegt über 500 V, und dafür ist kein Grenzwert hinterlegt.',
+    })
     expect(verdict(230_000, 'above_500')).toMatchObject({ within: null, limitMilli: null })
     // SELV and PELV keep their 0,25 MΩ, whatever the head names.
     expect(verdict(690_000, 'selv_pelv')).toMatchObject({ within: false, limitMilli: 250 })

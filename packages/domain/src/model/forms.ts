@@ -282,6 +282,11 @@ const noLimitAbove500 = {
   none: 'Über 500 V gilt der Mindestwert je Volt der Nennspannung des Stromkreises, und die nennt das Stromkreisverzeichnis nicht.',
 } as const
 
+/** The same where the head of the protocol names more than 500 V (#630). */
+const noLimitAbove500InHead = {
+  none: 'Die Nennspannung des Protokolls liegt über 500 V, und dafür ist kein Grenzwert hinterlegt.',
+} as const
+
 /**
  * The least insulation resistance of a circuit by its nominal voltage
  * (opengewerk/opengewerk#1021): 0,5 MΩ for SELV and PELV, 1,0 MΩ up to and
@@ -363,7 +368,7 @@ function recurringInsulation(loads: 'with_loads' | 'without_loads'): LimitCalcul
       conditions?.nominalVoltageMilli ?? (ordinary ? ordinary.value * 1000 : undefined)
 
     if (voltageMilli !== undefined && voltageMilli > 500_000) {
-      return noLimitAbove500
+      return noLimitAbove500InHead
     }
 
     if (!perVolt || voltageMilli === undefined) {
