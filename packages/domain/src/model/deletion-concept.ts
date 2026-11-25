@@ -123,7 +123,7 @@ export function deletionRules(facts: DeletionFacts): readonly DeletionRule[] {
     {
       key: 'sessions',
       data: 'Eine Sitzung',
-      when: `beim Abmelden, wenn die Person oder die Leitung ein Gerät abmeldet und wenn der Zugang gesperrt wird. Sitzungen ohne zweiten Faktor enden außerdem, sobald sich das Konto, das eine Authenticator-App hat, mit zweitem Faktor anmeldet, etwa beim Einrichten der App. Eine Sitzung läuft spätestens ${count(facts.sessionHours, 'Stunde', 'Stunden')} nach ihrer letzten Nutzung ab, ein Gerät für den Abgleich ${count(facts.deviceDays, 'Tag', 'Tage')} danach. Ist sie abgelaufen oder bei ihrem Betreiber der letzte Tag des Zugangs vorbei, löscht der Server sie von selbst, mit Gerät und Netzadresse, zehn Minuten nach seinem Start und danach jede Stunde.`,
+      when: `beim Abmelden, wenn die Person oder die Leitung ein Gerät abmeldet und wenn der Zugang gesperrt wird. Sitzungen ohne zweiten Faktor enden außerdem, sobald sich das Konto, das eine Authenticator-App hat, mit zweitem Faktor anmeldet, etwa beim Einrichten der App. Eine Sitzung läuft spätestens ${count(facts.sessionHours, 'Stunde', 'Stunden')} nach ihrer letzten Nutzung ab, ein Gerät für den Abgleich ${count(facts.deviceDays, 'Tag', 'Tage')} danach. Ist sie abgelaufen oder bei ihrem Betreiber der letzte Tag des Zugangs vorbei, löscht der Server sie von selbst, mit Gerät und Netzadresse, zehn Minuten nach seinem Start und danach jede Stunde, außer solange die Instanz geschlossen ist.`,
       setting: 'nein',
       proofs: ['B47', 'B49', 'B51', 'B44', 'B490', 'B487', 'B488', 'B489'],
     },
