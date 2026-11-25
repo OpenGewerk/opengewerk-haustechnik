@@ -283,8 +283,8 @@ describe('the table of the measurements on circuits (#350)', () => {
       ['Riso mit Verbrauchern', true],
     ])
     expect(table?.limits).toEqual([
-      'Riso ohne Verbraucher nach Tabelle 11 der DGUV Information 203-072, je Volt der Nennspannung und nach Umgebung und Netzform (DGUV Information 203-072, Tabelle 11)',
-      'Riso mit Verbrauchern nach Tabelle 11 der DGUV Information 203-072, je Volt der Nennspannung und nach Umgebung und Netzform (DGUV Information 203-072, Tabelle 11)',
+      'Riso ohne Verbraucher nach Tabelle 11 der DGUV Information 203-072, je Volt der Nennspannung des Protokolls, ohne Angabe 230 V, nach Umgebung und Netzform, bei SELV und PELV ein fester Mindestwert (DGUV Information 203-072, Tabelle 11)',
+      'Riso mit Verbrauchern nach Tabelle 11 der DGUV Information 203-072, je Volt der Nennspannung des Protokolls, ohne Angabe 230 V, nach Umgebung und Netzform, bei SELV und PELV ein fester Mindestwert (DGUV Information 203-072, Tabelle 11)',
     ])
     expect(table?.boards[0]?.rows[1]?.remarks).toBe('Riso ohne Verbraucher: Zweimal gemessen')
     expect(table?.boards[0]?.rows[1]?.values).toEqual([
