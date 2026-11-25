@@ -482,6 +482,12 @@ describe('the limits worked out of the nominal voltage and the kind of RCD (open
     })
   })
 
+  it('judges a circuit whose nominal voltage the rules do not know as one up to 500 V', () => {
+    const unknown = { ...lighting, voltageClass: 'up_to_1000' } as unknown as AnswerCircuit
+
+    expect(judgedOn(insulation, '700', unknown)).toMatchObject({ within: false, limitMilli: 1_000 })
+  })
+
   it('judges the tripping time of a selective RCD by its own range', () => {
     // 400 ms: within the 130 to 500 ms of a selective RCD, outside the 300 ms of one without delay.
     expect(judgedOn(tripTimeOfItsRcd, '400000', unusual)).toMatchObject({ within: true })

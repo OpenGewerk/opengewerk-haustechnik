@@ -220,6 +220,16 @@ const insulationRule: Readonly<Record<CircuitVoltageClass, string>> = {
   above_500: 'elektro.insulation_minimum_above_500v',
 }
 
+/**
+ * The nominal voltage of a circuit, up to 500 V where it names none or one
+ * the rules do not know, so that a limit is always looked up by a key there is.
+ */
+function voltageClassOf(item: unknown): CircuitVoltageClass {
+  const named = factsOf(item)?.voltageClass
+
+  return typeof named === 'string' && Object.hasOwn(insulationRule, named) ? named : 'up_to_500'
+}
+
 /** Where the rules for a day are not there: no limit rather than another one. */
 const noLimitThatDay = { none: 'Für diesen Tag ist kein Grenzwert hinterlegt.' } as const
 
@@ -230,7 +240,7 @@ const noLimitThatDay = { none: 'Für diesen Tag ist kein Grenzwert hinterlegt.' 
  * before the foundation 0.9.0.
  */
 export const circuitInsulation: LimitCalculator<FormTerms> = (_field, { rules, on, item }) => {
-  const rule = rules.at(insulationRule[factsOf(item)?.voltageClass ?? 'up_to_500'], on)
+  const rule = rules.at(insulationRule[voltageClassOf(item)], on)
 
   // Kiloohms are thousandths of the megaohms the field is measured in.
   return rule ? { limitMilli: rule.value, atLeast: true, source: rule.source } : noLimitThatDay

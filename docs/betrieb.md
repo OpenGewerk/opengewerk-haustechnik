@@ -35,7 +35,7 @@ docker compose -f docker/compose.yaml stop app backup-schedule &&
   sh docker/start.sh
 ```
 
-Bleibt ein Rückspielen auf halbem Weg stehen, startet `sh docker/start.sh` weder die Anwendung noch die nächtliche Sicherung und sagt das, und eine Sicherung von Hand lehnt `backup.sh` ebenso ab, damit kein halber Stand zur neuesten Sicherung wird. Dann die Ursache beheben und die Sicherung noch einmal zurückspielen.
+Eine Datei, die in der Sicherung beschädigt ist, findet `restore.sh`, bevor es etwas ändert; Datenbank und Dateispeicher bleiben dann, wie sie waren, und `sh docker/start.sh` startet die Instanz auf dem alten Stand, oder es wird eine andere Sicherung zurückgespielt. Bleibt ein Rückspielen dagegen auf halbem Weg stehen, startet `sh docker/start.sh` weder die Anwendung noch die nächtliche Sicherung und sagt das, und eine Sicherung von Hand lehnt `backup.sh` ebenso ab, damit kein halber Stand zur neuesten Sicherung wird. Dann die Ursache beheben und die drei Befehle oben noch einmal ausführen; ihre Anmeldung bekommt die Anwendung erst mit einem vollständigen Lauf zurück.
 
 Wie ein Archiv verschlüsselt wird und wohin es gehört, steht in `docker/.env.example`. Die Archive heißen nach der Datenbank (`haustechnik-<zeit>.tar.gz`), ein Ziel lässt sich also mit einer Installation von OpenGewerk teilen: jede Anwendung findet, behält und löscht nur ihre eigenen. Das gilt auch für ein Archiv, das statt `latest` mit seinem Namen genannt wird: eines der anderen Anwendung lehnen `restore.sh` und `verify.sh` ab, bevor sie die Datenbank fragen.
 
