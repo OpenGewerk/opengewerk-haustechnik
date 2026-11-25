@@ -21,6 +21,7 @@ die Versionsnummern folgen der [Semantischen Versionierung](https://semver.org/l
 ### Behoben
 
 - Handbuch und `docs/betrieb.md` sagen beim Rückspielen, dass zuerst Anwendung und nächtliche Sicherung angehalten werden und danach `sh docker/start.sh` die Instanz wieder startet (#628). Warum: `restore.sh` nimmt der Anwendung während des Rückspielens die Anmeldung, und erst `start.sh` gibt sie zurück; nach der alten Anleitung blieb die Anwendung ausgesperrt.
+- Der Server löscht die Zeile einer abgelaufenen Sitzung mit Gerät und Netzadresse jetzt von selbst, zehn Minuten nach seinem Start und danach jede Stunde, ebenso die einer Sitzung bei einem Betreiber, bei dem der letzte Tag des Zugangs ihrer Person vorbei ist; die Zeile der Anmeldung bleibt und bekommt ihr Ende. Das Fundament bringt den Lauf seit 0.9.0 mit (opengewerk/opengewerk#1029 und opengewerk/opengewerk#1030), die Haustechnik startet ihn jetzt. Verfahrensbeschreibung, Löschkonzept und technische Maßnahmen sagen es. Warum: Sonst blieb eine Sitzung, deren Browser nie wiederkam, mit Netzadresse und Gerät liegen, bis ein neues Passwort, eine Sperre oder das Ende des Kontos sie mitnahm.
 
 ### Sicherheit
 

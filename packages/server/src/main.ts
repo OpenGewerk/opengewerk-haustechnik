@@ -8,6 +8,7 @@ import {
   runInstance,
   startAddressSweep,
   startFileSweep,
+  startSessionSweep,
   startupLine,
   stopOnSignals,
 } from '@opengewerk/platform-server'
@@ -44,6 +45,7 @@ async function start(): Promise<void> {
   let pushWorker: { readonly stop: () => Promise<void> } | null = null
   let fileSweep: { readonly stop: () => Promise<void> } | null = null
   let addressSweep: { readonly stop: () => Promise<void> } | null = null
+  let sessionSweep: { readonly stop: () => Promise<void> } | null = null
 
   stopOnSignals(application.name, [
     () => mailWorker?.stop(),
@@ -51,6 +53,7 @@ async function start(): Promise<void> {
     () => pushWorker?.stop(),
     () => fileSweep?.stop(),
     () => addressSweep?.stop(),
+    () => sessionSweep?.stop(),
     instance.stopSettings,
     () => instance.application.close(),
     () => instance.database.close(),
@@ -91,6 +94,11 @@ async function start(): Promise<void> {
     // A new address whose link ran out goes, checked every hour (#862 in
     // the repository opengewerk).
     addressSweep = startAddressSweep(instance.database)
+    // A session that ran out goes, with the network address and the device,
+    // and its stretch of work in the tenant ends when it ran out; checked ten
+    // minutes after the start and then every hour (#1029 in the repository
+    // opengewerk).
+    sessionSweep = startSessionSweep(instance.database)
   }
 
   // The jobs that tell people what is due (#126). Neither runs on a closed

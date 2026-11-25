@@ -80,6 +80,7 @@ Anhang B nennt jedes Feld der Datenbank, das auf eine Person zeigt. Dieser Absch
 - Zu jeder Anmeldung gibt es eine Sitzung: die Kennung des Browsers, eine zufällige Kennung des Geräts, die der Browser selbst erzeugt, der Beginn, der Ablauf, der Weg der Anmeldung (Passwort oder Passkey) und ob sie einen zweiten Faktor trägt (Code aus der App, Wiederherstellungscode oder Passkey). Reicht der vorgeschaltete Webserver die Netzadresse der Anmeldung durch, steht auch sie in der Zeile der Sitzung. [K9, B62]
 - **Zusage:** Die Netzadresse einer Anmeldung sieht nur die Person selbst, unter „Konto“ an jedem ihrer Geräte, damit sie eine Anmeldung erkennt, die nicht ihre ist. Die Leitung sieht sie unter „Zugänge“ nicht. Hängt ein Browser selbst eine Adresse an, steht keine da, die er gewählt hat. [K9, B49, B267, B268]
 - **Zusage:** Eine Sitzung endet nach zwölf Stunden. Ein Gerät, das sich für den Abgleich angemeldet hat, bleibt dreißig Tage angemeldet. [K9, B44]
+- **Zusage:** Die Zeile einer abgelaufenen Sitzung mit Gerät und Netzadresse löscht der Server von selbst, auch wenn der Browser nie wiederkommt, ebenso die einer Sitzung bei einem Betreiber, bei dem der letzte Tag des Zugangs ihrer Person vorbei ist. Er sieht zehn Minuten nach seinem Start und danach jede Stunde nach. Die Zeile der Anmeldung bei diesem Betreiber bleibt und bekommt als Ende den Ablauf der Sitzung oder das Ende des letzten Tages. [K9, B487, B488, B489]
 - **Zusage:** Jede Person sieht unter „Konto“ die Geräte, auf denen sie angemeldet ist, und meldet sie dort ab. Die Geräte eines anderen Kontos sieht sie nicht und meldet sie nicht ab. [K3, B42, B43]
 - Die Leitung sieht unter „Zugänge“, auf welchen Geräten eine Person bei diesem Betreiber angemeldet ist, seit wann und bis wann, und kann ein Gerät abmelden. [K9, B49]
 - Jede Anmeldung bei einem Betreiber und jede Abmeldung steht als Zeile fest: wer, welches Gerät, Beginn, Ende, Weg der Anmeldung. Diese Zeilen stehen auch im Änderungsprotokoll. [K9, B45]
@@ -473,7 +474,7 @@ Leitung und Technische Leitung sehen als Vorgabe alle Bereiche.
 
 ## 7. Wie lange aufbewahrt wird
 
-- Nach Ablauf einer Frist löscht diese Fassung Nachweise und die Vorgänge dahinter, was an keinem Nachweis hängt, wie die folgenden Punkte es sagen, und die Angaben eines beendeten Zugangs, die kein Nachweis braucht (Abschnitt 3.2). Was sonst in den Abschnitten 3 und 8 genannt ist, bleibt, solange die Instanz besteht. Was wann gelöscht wird und was bleibt, nennt das Löschkonzept, das die Leitung erzeugt (Abschnitt 3.21). [K2.6, K3, K9]
+- Nach Ablauf einer Frist löscht diese Fassung Nachweise und die Vorgänge dahinter, was an keinem Nachweis hängt, wie die folgenden Punkte es sagen, und die Angaben eines beendeten Zugangs, die kein Nachweis braucht (Abschnitt 3.2). Eine abgelaufene Sitzung löscht der Server von selbst (Abschnitt 3.3). Was sonst in den Abschnitten 3 und 8 genannt ist, bleibt, solange die Instanz besteht. Was wann gelöscht wird und was bleibt, nennt das Löschkonzept, das die Leitung erzeugt (Abschnitt 3.21). [K2.6, K3, K9]
 - **Zusage:** Ein Datensatz, den jemand entfernt, wird als entfernt markiert und nicht gelöscht. Die Anwendung kann eine solche Zeile in der Datenbank nicht löschen. Die zwei Ausnahmen sind der Inhalt eines Vorgangs, der nach Ablauf der Aufbewahrung gelöscht wird, und eine Aufgabe ein Jahr nach ihrer Erledigung: sie löscht die Datenbank in diesem Schritt, auf jedem anderen Weg lehnt sie es ab (folgende Punkte). [K2.6, B34, B370, B453]
 - **Zusage:** Eine Zugehörigkeit, eine Einladung und die Zeilen der An- und Abmeldungen löscht die Anwendung nicht. [K7, B60]
 - Ein Konto selbst löscht die Anwendung nicht: sein Name stünde sonst nirgends mehr, wo die Person unterschrieben hat. Nach dem Ende eines Zugangs entfernt sie aber, was kein Nachweis braucht (Abschnitt 3.2). Was das Änderungsprotokoll davon schon hält, etwa eine berichtigte E-Mail-Adresse, bleibt, bis die Leitung es schwärzt (Abschnitt 8). [K2.6, K7, K9]
@@ -1038,6 +1039,9 @@ Pfade ohne Vorsatz liegen im Repository `opengewerk/opengewerk-haustechnik`. Pfa
 | B484 | Test | `packages/server/src/api/outside-reports.test.ts` | `keep no address and no code, and nothing past its hour (#540)` |
 | B485 | Test | `upstream/opengewerk/packages/platform/server/src/authentication/address-confirmation.test.ts` | `goes with the sweep, and one whose link still works stays` |
 | B486 | Stelle | `packages/server/src/main.ts` | `startAddressSweep(instance.database)` |
+| B487 | Test | `upstream/opengewerk/packages/platform/server/src/authentication/authentication.test.ts` | `goes with the sweep, ends its work when it ran out, and one still running stays` |
+| B488 | Stelle | `packages/server/src/main.ts` | `startSessionSweep(instance.database)` |
+| B489 | Test | `upstream/opengewerk/packages/platform/server/src/authentication/authentication.test.ts` | `loses its sessions in that tenant, and its work ends with the day; elsewhere nothing changes` |
 
 ---
 
