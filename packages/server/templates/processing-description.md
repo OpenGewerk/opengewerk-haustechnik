@@ -79,7 +79,7 @@ Anhang B nennt jedes Feld der Datenbank, das auf eine Person zeigt. Dieser Absch
 
 - Zu jeder Anmeldung gibt es eine Sitzung: die Kennung des Browsers, eine zufällige Kennung des Geräts, die der Browser selbst erzeugt, der Beginn, der Ablauf, der Weg der Anmeldung (Passwort oder Passkey) und ob sie einen zweiten Faktor trägt (Code aus der App, Wiederherstellungscode oder Passkey). Reicht der vorgeschaltete Webserver die Netzadresse der Anmeldung durch, steht auch sie in der Zeile der Sitzung. [K9, B62]
 - **Zusage:** Die Netzadresse einer Anmeldung sieht nur die Person selbst, unter „Konto“ an jedem ihrer Geräte, damit sie eine Anmeldung erkennt, die nicht ihre ist. Die Leitung sieht sie unter „Zugänge“ nicht. Hängt ein Browser selbst eine Adresse an, steht keine da, die er gewählt hat. [K9, B49, B267, B268]
-- **Zusage:** Eine Sitzung endet nach zwölf Stunden. Ein Gerät, das sich für den Abgleich angemeldet hat, bleibt dreißig Tage angemeldet. [K9, B44]
+- **Zusage:** Eine Sitzung endet spätestens zwölf Stunden nach ihrer letzten Nutzung. Ein Gerät, das sich für den Abgleich angemeldet hat, bleibt bis dreißig Tage nach seiner letzten Nutzung angemeldet. [K9, B44, B490]
 - **Zusage:** Die Zeile einer abgelaufenen Sitzung mit Gerät und Netzadresse löscht der Server von selbst, auch wenn der Browser nie wiederkommt, ebenso die einer Sitzung bei einem Betreiber, bei dem der letzte Tag des Zugangs ihrer Person vorbei ist. Er sieht zehn Minuten nach seinem Start und danach jede Stunde nach. Die Zeile der Anmeldung bei diesem Betreiber bleibt und bekommt als Ende den Ablauf der Sitzung oder das Ende des letzten Tages. [K9, B487, B488, B489]
 - **Zusage:** Jede Person sieht unter „Konto“ die Geräte, auf denen sie angemeldet ist, und meldet sie dort ab. Die Geräte eines anderen Kontos sieht sie nicht und meldet sie nicht ab. [K3, B42, B43]
 - Die Leitung sieht unter „Zugänge“, auf welchen Geräten eine Person bei diesem Betreiber angemeldet ist, seit wann und bis wann, und kann ein Gerät abmelden. [K9, B49]
@@ -1042,6 +1042,7 @@ Pfade ohne Vorsatz liegen im Repository `opengewerk/opengewerk-haustechnik`. Pfa
 | B487 | Test | `upstream/opengewerk/packages/platform/server/src/authentication/authentication.test.ts` | `goes with the sweep, ends its work when it ran out, and one still running stays` |
 | B488 | Stelle | `packages/server/src/main.ts` | `startSessionSweep(instance.database)` |
 | B489 | Test | `upstream/opengewerk/packages/platform/server/src/authentication/authentication.test.ts` | `loses its sessions in that tenant, and its work ends with the day; elsewhere nothing changes` |
+| B490 | Test | `upstream/opengewerk/packages/platform/server/src/authentication/authentication.test.ts` | `renews a session in use to a full lifetime from now, by its kind` |
 
 ---
 
