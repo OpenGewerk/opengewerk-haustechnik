@@ -175,7 +175,7 @@ describe('the table of the measurements on circuits (#350)', () => {
       `Zs aus Charakteristik und Nennstrom (${zsSource})`,
       'Riso mindestens 1,00 MΩ (DIN VDE 0100-600)',
       'RPE ohne Grenzwert',
-      'ohne Angaben zur Schutzeinrichtung keiner für Zs',
+      'ohne Angaben zur Schutzeinrichtung oder ohne Regel am Tag der Prüfung keiner für Zs',
     ])
   })
 
@@ -308,8 +308,8 @@ describe('the table of the measurements on circuits (#350)', () => {
     )
 
     expect(table?.limits.filter((line) => line.includes('keiner für'))).toEqual([
-      'über 500 V keiner für Riso ohne Verbraucher und Riso mit Verbrauchern',
-      'ohne Angaben zur Schutzeinrichtung keiner für Zs',
+      'über 500 V oder ohne Regel am Tag der Prüfung keiner für Riso ohne Verbraucher und Riso mit Verbrauchern',
+      'ohne Angaben zur Schutzeinrichtung oder ohne Regel am Tag der Prüfung keiner für Zs',
     ])
   })
 

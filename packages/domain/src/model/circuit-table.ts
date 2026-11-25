@@ -163,14 +163,19 @@ function remarksOf(said: readonly StatedAnswer[]): string {
 }
 
 /**
- * Why a limit worked out of the circuit is missing in a row: for the
- * insulation of the recurring test a circuit above 500 V (#630), whose
- * nominal voltage the chart does not name, else what protects the circuit.
+ * Why a limit worked out of the circuit can be missing in a row, as far as
+ * the frozen state tells: for the insulation of the recurring test a circuit
+ * above 500 V (#630), whose nominal voltage the chart does not name, else
+ * what protects the circuit, and either way a day before its rules began,
+ * which the state does not keep apart from the first.
  */
 function missingBecause(kind: WorkedOutLimitKind): string {
-  return kind === 'recurring_insulation_without_loads' || kind === 'recurring_insulation_with_loads'
-    ? 'über 500 V'
-    : 'ohne Angaben zur Schutzeinrichtung'
+  const first =
+    kind === 'recurring_insulation_without_loads' || kind === 'recurring_insulation_with_loads'
+      ? 'über 500 V'
+      : 'ohne Angaben zur Schutzeinrichtung'
+
+  return `${first} oder ohne Regel am Tag der Prüfung`
 }
 
 /** Where the limit of each column comes from, with its sources (`CircuitTable.limits`). */

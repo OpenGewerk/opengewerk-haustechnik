@@ -486,7 +486,7 @@ describe('the page of an evidence', () => {
     expect(screen.getByText('2 Stromkreise aus 1 Verteiler')).toBeTruthy()
     expect(
       screen.getByText(
-        'Grenzwerte: Zs aus Charakteristik und Nennstrom (DIN VDE 0100-410); ohne Angaben zur Schutzeinrichtung keiner für Zs.',
+        'Grenzwerte: Zs aus Charakteristik und Nennstrom (DIN VDE 0100-410); ohne Angaben zur Schutzeinrichtung oder ohne Regel am Tag der Prüfung keiner für Zs.',
       ),
     ).toBeTruthy()
   })
