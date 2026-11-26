@@ -289,7 +289,6 @@ describe('the package Elektro', () => {
       expect(
         [
           verdict('protective_conductor', 300),
-          verdict('insulation_resistance', 1_000),
           verdict('loop_impedance', 1_437),
           verdict('rcd_trip_current', 30_000),
           verdict('rcd_trip_time', 300_000),
@@ -297,47 +296,103 @@ describe('the package Elektro', () => {
         key,
       ).toEqual([
         [null, 'Kein Grenzwert.'],
-        [true, 'Innerhalb des Grenzwerts, mindestens 1,00 MΩ.'],
         [true, 'Innerhalb des Grenzwerts, höchstens 1,437 Ω.'],
         [true, 'Innerhalb des Grenzwerts, höchstens 30,0 mA.'],
         [true, 'Innerhalb des Grenzwerts, höchstens 300 ms.'],
       ])
       expect(
         [
-          verdict('insulation_resistance', 999),
           verdict('loop_impedance', 1_438),
           verdict('rcd_trip_current', 30_001),
           verdict('rcd_trip_time', 300_001),
         ].map((each) => each?.within),
         key,
-      ).toEqual([false, false, false, false])
+      ).toEqual([false, false, false])
 
       // Since version 2 (opengewerk/opengewerk#1021): a SELV or PELV circuit
-      // with a selective RCD, judged by its own limits, 0,5 MΩ and 130 to 500 ms.
-      const unusual = { ...circuit, voltageClass: 'selv_pelv', rcdSelective: true }
-      const unusualVerdict = (field: string, value: number) => {
+      // with a selective RCD, judged by its own limits.
+      const judged = (field: string, value: number, item: object) => {
         const found = measured.get(field)
 
         return found === undefined
           ? null
-          : forms.limitVerdict(found, value, {
-              rules: catalogue.ruleSet,
-              on: '2017-06-01',
-              item: unusual,
-            })
+          : forms.limitVerdict(found, value, { rules: catalogue.ruleSet, on: '2017-06-01', item })
       }
+      const unusual = { ...circuit, voltageClass: 'selv_pelv', rcdSelective: true }
 
-      expect(catalogue.form(key, today)?.version, key).toBe(2)
+      // The recurring test judges the insulation after table 11 since version 3 (#630).
+      expect(catalogue.form(key, today)?.version, key).toBe(
+        key === 'elektro.installation_test' ? 3 : 2,
+      )
       expect(
         [
-          unusualVerdict('insulation_resistance', 500),
-          unusualVerdict('insulation_resistance', 499),
-          unusualVerdict('rcd_trip_time', 400_000),
-          unusualVerdict('rcd_trip_time', 129_999),
+          judged('rcd_trip_time', 400_000, unusual),
+          judged('rcd_trip_time', 129_999, unusual),
           verdict('rcd_trip_time', 400_000),
         ].map((each) => each?.within),
         key,
-      ).toEqual([true, false, true, false, false])
+      ).toEqual([true, false, false])
+
+      if (key === 'elektro.installation_initial_test') {
+        // After table 6.1 of DIN VDE 0100-600: 1,0 MΩ, and 0,5 MΩ for SELV and PELV.
+        expect(verdict('insulation_resistance', 1_000)?.text).toBe(
+          'Innerhalb des Grenzwerts, mindestens 1,00 MΩ.',
+        )
+        expect(
+          [
+            verdict('insulation_resistance', 999),
+            judged('insulation_resistance', 500, unusual),
+            judged('insulation_resistance', 499, unusual),
+          ].map((each) => each?.within),
+        ).toEqual([false, true, false])
+      } else {
+        // After table 11 of the DGUV Information 203-072 (#630): per volt of
+        // 230 V without a nominal voltage, by the environment and with or
+        // without the loads, 50 Ω per volt in an IT system, 0,25 MΩ for SELV
+        // and PELV, and no limit above 500 V.
+        const damp = { ...circuit, environment: 'damp' }
+        const it = { ...circuit, earthingSystem: 'it' }
+        const at400 = { ...circuit, nominalVoltageMilli: 400_000 }
+
+        expect(verdict('insulation_without_loads', 230)?.text).toBe(
+          'Innerhalb des Grenzwerts, mindestens 0,230 MΩ.',
+        )
+        expect(
+          [
+            verdict('insulation_without_loads', 229),
+            verdict('insulation_with_loads', 69),
+            verdict('insulation_with_loads', 68),
+            judged('insulation_without_loads', 115, damp),
+            judged('insulation_without_loads', 114, damp),
+            judged('insulation_with_loads', 35, damp),
+            judged('insulation_with_loads', 34, damp),
+            judged('insulation_without_loads', 12, it),
+            judged('insulation_without_loads', 11, it),
+            judged('insulation_without_loads', 400, at400),
+            judged('insulation_without_loads', 399, at400),
+            judged('insulation_without_loads', 250, unusual),
+            judged('insulation_with_loads', 249, unusual),
+          ].map((each) => each?.within),
+        ).toEqual([
+          false,
+          true,
+          false,
+          true,
+          false,
+          true,
+          false,
+          true,
+          false,
+          true,
+          false,
+          true,
+          false,
+        ])
+        expect(
+          judged('insulation_without_loads', 10_000, { ...circuit, voltageClass: 'above_500' }),
+        ).toMatchObject({ within: null, limitMilli: null })
+        expect(measured.has('insulation_resistance')).toBe(false)
+      }
     }
   })
 

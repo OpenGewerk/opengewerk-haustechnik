@@ -85,10 +85,16 @@ export function onACircuit(answer: StatedAnswer, circuits: readonly StatedCircui
 
 /**
  * The symbol a label ends with, `RPE` of "Durchgängigkeit des Schutzleiters
- * RPE", as a table of measurements names a column.
+ * RPE", as a table of measurements names a column. A label that goes on
+ * after its symbol with "ohne" or "mit" keeps that part, so that the two ways
+ * of measuring the insulation of the recurring test stay apart (#630):
+ * "Riso ohne Verbraucher", as OpenGewerk heads its columns.
  */
 export function symbolOf(label: string): string {
-  return label.trim().split(/\s+/).at(-1) ?? label
+  const words = label.trim().split(/\s+/)
+  const how = words.findIndex((word, at) => at > 1 && (word === 'ohne' || word === 'mit'))
+
+  return how > 0 ? words.slice(how - 1).join(' ') : (words.at(-1) ?? label)
 }
 
 /** A measured value in words, split into its figure and its unit: "0,42 Ω". */
@@ -156,11 +162,29 @@ function remarksOf(said: readonly StatedAnswer[]): string {
     .join(' ')
 }
 
+/**
+ * Why a limit worked out of the circuit can be missing in a row: each reason
+ * its calculator has, and for every kind a day before its rules began. The
+ * frozen state does not say which one it was, so the legend names them all
+ * and none that cannot be: the loop impedance needs a breaker B, C or D with
+ * its rated current, the tripping current a rated residual current, and the
+ * insulation of the recurring test has none above 500 V (#630).
+ */
+const missingBecause: Readonly<Record<WorkedOutLimitKind, string>> = {
+  loop_impedance:
+    'ohne Leitungsschutzschalter B, C oder D mit Nennstrom oder ohne Regel am Tag der Prüfung',
+  rcd_trip_current: 'ohne Bemessungsdifferenzstrom oder ohne Regel am Tag der Prüfung',
+  circuit_insulation: 'ohne Regel am Tag der Prüfung',
+  rcd_trip_time: 'ohne Regel am Tag der Prüfung',
+  recurring_insulation_without_loads: 'über 500 V oder ohne Regel am Tag der Prüfung',
+  recurring_insulation_with_loads: 'über 500 V oder ohne Regel am Tag der Prüfung',
+}
+
 /** Where the limit of each column comes from, with its sources (`CircuitTable.limits`). */
 function limitsOf(answers: readonly StatedAnswer[], columns: readonly CircuitColumn[]): string[] {
   const limited: string[] = []
   const unlimited: string[] = []
-  const without: string[] = []
+  const without = new Map<string, string[]>()
 
   for (const column of columns) {
     const ofColumn = answers.filter((answer) => answer.label === column.label)
@@ -178,7 +202,9 @@ function limitsOf(answers: readonly StatedAnswer[], columns: readonly CircuitCol
       limited.push(`${column.symbol} ${workedOutLimitWords[column.workedOut]}${from}`)
 
       if (ofColumn.some((answer) => answer.limit === null)) {
-        without.push(column.symbol)
+        const because = missingBecause[column.workedOut]
+
+        without.set(because, [...(without.get(because) ?? []), column.symbol])
       }
     } else if (bound !== undefined) {
       limited.push(`${column.symbol} ${bound}${from}`)
@@ -190,9 +216,7 @@ function limitsOf(answers: readonly StatedAnswer[], columns: readonly CircuitCol
   return [
     ...limited,
     ...(unlimited.length === 0 ? [] : [`${unlimited.join(' und ')} ohne Grenzwert`]),
-    ...(without.length === 0
-      ? []
-      : [`ohne Angaben zur Schutzeinrichtung keiner für ${without.join(' und ')}`]),
+    ...[...without].map(([because, symbols]) => `${because} keiner für ${symbols.join(' und ')}`),
   ]
 }
 
@@ -200,6 +224,8 @@ function limitsOf(answers: readonly StatedAnswer[], columns: readonly CircuitCol
 const limitPerCircuit: ReadonlySet<WorkedOutLimitKind> = new Set([
   'loop_impedance',
   'circuit_insulation',
+  'recurring_insulation_without_loads',
+  'recurring_insulation_with_loads',
   'rcd_trip_time',
 ])
 

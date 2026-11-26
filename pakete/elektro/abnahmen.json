@@ -282,6 +282,10 @@
     {
       "file": "formulare/installation_test.v2.json",
       "checkedOn": "2026-11-25"
+    },
+    {
+      "file": "formulare/installation_test.v3.json",
+      "checkedOn": "2026-11-25"
     }
   ],
   "rules": [
@@ -437,6 +441,36 @@
     },
     {
       "key": "rcd_selective_trip_time_maximum",
+      "validFrom": "2017-06-01",
+      "checkedOn": "2026-11-25"
+    },
+    {
+      "key": "insulation_recurring_selv_pelv",
+      "validFrom": "2017-06-01",
+      "checkedOn": "2026-11-25"
+    },
+    {
+      "key": "insulation_recurring_per_volt_without_loads_dry",
+      "validFrom": "2017-06-01",
+      "checkedOn": "2026-11-25"
+    },
+    {
+      "key": "insulation_recurring_per_volt_without_loads_damp",
+      "validFrom": "2017-06-01",
+      "checkedOn": "2026-11-25"
+    },
+    {
+      "key": "insulation_recurring_per_volt_with_loads_dry",
+      "validFrom": "2017-06-01",
+      "checkedOn": "2026-11-25"
+    },
+    {
+      "key": "insulation_recurring_per_volt_with_loads_damp",
+      "validFrom": "2017-06-01",
+      "checkedOn": "2026-11-25"
+    },
+    {
+      "key": "insulation_recurring_per_volt_it",
       "validFrom": "2017-06-01",
       "checkedOn": "2026-11-25"
     }

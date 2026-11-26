@@ -415,3 +415,172 @@ describe('an installation without a circuit (#350)', () => {
     expect(screen.queryByRole('button', { name: 'Zu den Verteilern' })).toBeNull()
   })
 })
+
+/**
+ * The recurring test after table 11 of the DGUV Information 203-072 (#630):
+ * the probe form with the earthing system in its head and the insulation
+ * without the loads in the block of each circuit.
+ */
+const withTable11: PackagedForm = {
+  ...installationTest,
+  sections: [
+    {
+      key: 'head',
+      title: 'Allgemein',
+      fields: [
+        {
+          kind: 'choice',
+          key: 'earthing_system',
+          label: 'Netzform',
+          options: [
+            { value: 'tn_s', label: 'TN-S' },
+            { value: 'it', label: 'IT' },
+          ],
+        },
+      ],
+    },
+    ...installationTest.sections.map((section) =>
+      section.key !== 'measurements'
+        ? section
+        : {
+            ...section,
+            fields: section.fields.map((field) =>
+              field.kind !== 'group'
+                ? field
+                : {
+                    ...field,
+                    fields: [
+                      {
+                        kind: 'measurement' as const,
+                        key: 'insulation_without_loads',
+                        label: 'Isolationswiderstand Riso ohne Verbraucher',
+                        unit: 'megaohms',
+                        decimals: 3,
+                        limit: { kind: 'recurring_insulation_without_loads' },
+                      },
+                      {
+                        kind: 'choice' as const,
+                        key: 'environment',
+                        label: 'Umgebung',
+                        options: [
+                          { value: 'dry', label: 'trocken' },
+                          { value: 'damp', label: 'feucht' },
+                        ],
+                      },
+                      ...field.fields,
+                    ],
+                  },
+            ),
+          },
+    ),
+  ],
+} as PackagedForm
+
+const table11 = 'DGUV Information 203-072, Tabelle 11'
+const table11Catalogue: CatalogueBundle = {
+  ...circuitCatalogue,
+  packages: circuitCatalogue.packages.map((each) =>
+    each.name !== 'elektro'
+      ? each
+      : {
+          ...each,
+          forms: each.forms.map((form) => ({ ...form, definition: withTable11 })),
+          rules: [
+            ...each.rules,
+            vde('insulation_recurring_selv_pelv', 'kiloohms', 250, table11),
+            vde('insulation_recurring_per_volt_without_loads_dry', 'factor', 1_000, table11),
+            vde('insulation_recurring_per_volt_without_loads_damp', 'factor', 500, table11),
+            vde('insulation_recurring_per_volt_it', 'factor', 50, table11),
+          ],
+        },
+  ),
+}
+
+describe('a value of a circuit judged with the conditions of its activity on site (#630)', () => {
+  /**
+   * F2 with 0,020 MΩ without the loads, the earthing system of the head
+   * where one is given, and the environment of its block where one is.
+   */
+  function measuredIn(system: string | null, environment: string | null = null) {
+    const server = installationServer()
+
+    server.put('activity_answers', measured(f2.id, 'insulation_without_loads', { value: '20' }))
+
+    if (environment !== null) {
+      server.put('activity_answers', {
+        ...measured(f2.id, 'environment', { value: JSON.stringify(environment) }),
+        id: 'an-environment',
+      })
+    }
+
+    if (system !== null) {
+      server.put('activity_answers', {
+        ...measured(f2.id, 'earthing_system', { value: JSON.stringify(system) }),
+        id: 'an-earthing-system',
+        groupKey: null,
+        blockKey: null,
+      })
+    }
+
+    return server
+  }
+
+  it('judges the insulation by the earthing system the head of the activity names', async () => {
+    await mountSite(`/vorgaenge/${test.id}/stromkreise/${f2.id}`, {
+      server: measuredIn('it'),
+      answers: servingCatalogue(table11Catalogue),
+    })
+
+    // 50 Ω per volt in an IT system at 230 V.
+    expect(await screen.findByText('Innerhalb des Grenzwerts, mindestens 0,012 MΩ.')).toBeDefined()
+  })
+
+  it('judges it as in a TN or TT system where the head names none', async () => {
+    await mountSite(`/vorgaenge/${test.id}/stromkreise/${f2.id}`, {
+      server: measuredIn(null),
+      answers: servingCatalogue(table11Catalogue),
+    })
+
+    expect(await screen.findByText('Außerhalb des Grenzwerts, mindestens 0,230 MΩ.')).toBeDefined()
+  })
+
+  it('judges it by the environment of the block of its circuit', async () => {
+    await mountSite(`/vorgaenge/${test.id}/stromkreise/${f2.id}`, {
+      server: measuredIn(null, 'damp'),
+      answers: servingCatalogue(table11Catalogue),
+    })
+
+    // 500 Ω per volt in a damp environment at 230 V.
+    expect(await screen.findByText('Außerhalb des Grenzwerts, mindestens 0,115 MΩ.')).toBeDefined()
+  })
+
+  it('asks the environment in the block of each circuit, keeps it with the circuit and judges by it at once', async () => {
+    const { client } = await mountSite(`/vorgaenge/${test.id}/stromkreise/${f2.id}`, {
+      server: measuredIn(null),
+      answers: servingCatalogue(table11Catalogue),
+    })
+
+    expect(await screen.findByText('Außerhalb des Grenzwerts, mindestens 0,230 MΩ.')).toBeDefined()
+
+    fireEvent.click(screen.getByRole('link', { name: /Umgebung/ }))
+    fireEvent.click(await screen.findByRole('radio', { name: 'feucht' }))
+
+    await waitFor(() => {
+      expect(
+        client.list('activity_answers').filter((answer) => answer['fieldKey'] === 'environment'),
+      ).toMatchObject([
+        {
+          activityId: test.id,
+          groupKey: 'circuits',
+          blockKey: f2.id,
+          value: JSON.stringify('damp'),
+        },
+      ])
+    })
+
+    // Back at the circuit, its insulation is judged as damp: 500 Ω per volt at 230 V.
+    fireEvent.click(screen.getByRole('link', { name: /Zurück zum Stromkreis/ }))
+
+    expect(await screen.findByText('Außerhalb des Grenzwerts, mindestens 0,115 MΩ.')).toBeDefined()
+  })
+})

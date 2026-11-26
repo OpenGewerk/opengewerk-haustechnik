@@ -10,6 +10,8 @@ import {
   circuitOfAnswer,
   type FilledAnswer,
   formValuesOf,
+  measuringConditionsOf,
+  statedAnswers,
 } from './answer.js'
 import { canonicalForm } from './canonical.js'
 import { type FormDefinition, forms, type MeasurementField } from './forms.js'
@@ -505,5 +507,233 @@ describe('the limits worked out of the nominal voltage and the kind of RCD (open
       expect.objectContaining({ itemId: workbench.id, item: facts(workbench) }),
       expect.objectContaining({ itemId: lighting.id, item: facts(unusual) }),
     ])
+  })
+})
+
+/**
+ * The insulation of the recurring test after table 11 of the DGUV Information
+ * 203-072 (#630): judged with the conditions the answers of the activity name,
+ * the environment in the block of the circuit and the earthing system and the
+ * nominal voltage in the head, the same for a finding and in the evidence.
+ */
+describe('the insulation of the recurring test after table 11 (#630)', () => {
+  const withoutLoads: MeasurementField = {
+    kind: 'measurement',
+    key: 'insulation_without_loads',
+    label: 'Isolationswiderstand Riso ohne Verbraucher',
+    unit: 'megaohms',
+    decimals: 3,
+    limit: { kind: 'recurring_insulation_without_loads' },
+  }
+  const recurring: FormDefinition = {
+    ...protocol,
+    sections: [
+      {
+        key: 'head',
+        title: 'Allgemein',
+        fields: [
+          {
+            kind: 'choice',
+            key: 'earthing_system',
+            label: 'Netzform',
+            options: [
+              { value: 'tn_s', label: 'TN-S' },
+              { value: 'it', label: 'IT' },
+            ],
+          },
+          {
+            kind: 'number',
+            key: 'nominal_voltage',
+            label: 'Nennspannung',
+            unit: 'volts',
+            decimals: 0,
+          },
+        ],
+      },
+      {
+        key: 'measurements',
+        title: 'Messen',
+        fields: [
+          {
+            kind: 'group',
+            key: 'circuits',
+            label: 'Messen je Stromkreis',
+            repeat: 'circuits',
+            fields: [
+              {
+                kind: 'choice',
+                key: 'environment',
+                label: 'Umgebung',
+                options: [
+                  { value: 'dry', label: 'trocken' },
+                  { value: 'damp', label: 'feucht' },
+                ],
+              },
+              withoutLoads,
+            ],
+          },
+        ],
+      },
+    ],
+  }
+  const table11 = ruleSet(
+    [
+      ['elektro.loop_nominal_voltage', 'volts', 230],
+      ['elektro.insulation_recurring_selv_pelv', 'kiloohms', 250],
+      ['elektro.insulation_recurring_per_volt_without_loads_dry', 'factor', 1_000],
+      ['elektro.insulation_recurring_per_volt_without_loads_damp', 'factor', 500],
+      ['elektro.insulation_recurring_per_volt_it', 'factor', 50],
+    ].map(([key, unit, value]) => ({
+      key: key as string,
+      validFrom: '2017-06-01' as const,
+      validUntil: null,
+      unit: unit as 'factor',
+      value: value as number,
+      source: 'DGUV Information 203-072, Tabelle 11',
+    })),
+  )
+  const judgedBy = { rules: table11, on: '2026-10-19' as const, circuits }
+  const head = (fieldKey: string, value: unknown) =>
+    answer({ fieldKey, value: JSON.stringify(value) })
+  const inBlock = (circuit: string, fieldKey: string, value: unknown) =>
+    answer({ groupKey: 'circuits', blockKey: circuit, fieldKey, value: JSON.stringify(value) })
+
+  it('takes the environment from the block of its circuit, and the earthing system and the nominal voltage from the head', () => {
+    const answers = [
+      head('earthing_system', 'it'),
+      head('nominal_voltage', 400_000),
+      inBlock(lighting.id, 'environment', 'damp'),
+      inBlock(workbench.id, 'environment', 'dry'),
+    ]
+
+    expect(measuringConditionsOf(answers, 'circuits', lighting.id)).toEqual({
+      environment: 'damp',
+      earthingSystem: 'it',
+      nominalVoltageMilli: 400_000,
+    })
+    expect(measuringConditionsOf(answers, 'circuits', workbench.id)).toMatchObject({
+      environment: 'dry',
+    })
+    expect(measuringConditionsOf([], 'circuits', lighting.id)).toEqual({})
+    // Neither a voltage below nought nor an environment the form does not know.
+    expect(
+      measuringConditionsOf(
+        [head('nominal_voltage', -1), inBlock(lighting.id, 'environment', 'wet')],
+        'circuits',
+        lighting.id,
+      ),
+    ).toEqual({})
+  })
+
+  it('makes a finding of a value outside the limit of its conditions, and none of one within them', () => {
+    // 0,120 MΩ: outside the 0,230 MΩ of a dry circuit at 230 V, within the 0,115 MΩ of a damp one.
+    const findings = (environment: string) =>
+      answerFindings(
+        recurring,
+        [
+          inBlock(lighting.id, 'environment', environment),
+          measured(lighting.id, 'insulation_without_loads', 120),
+        ],
+        judgedBy,
+      )
+
+    expect(findings('dry')).toHaveLength(1)
+    expect(findings('damp')).toEqual([])
+  })
+
+  it('holds 0,25 MΩ for SELV and PELV, in an IT system as well', () => {
+    // 0,100 MΩ: within the 0,012 MΩ of an IT system at 230 V, outside the 0,250 MΩ of SELV and PELV.
+    const findings = (voltageClass: AnswerCircuit['voltageClass']) =>
+      answerFindings(
+        recurring,
+        [head('earthing_system', 'it'), measured(lighting.id, 'insulation_without_loads', 100)],
+        {
+          ...judgedBy,
+          circuits: circuits.map((circuit) =>
+            circuit.id === lighting.id ? { ...circuit, voltageClass } : circuit,
+          ),
+        },
+      )
+
+    expect(findings('selv_pelv')).toHaveLength(1)
+    expect(findings('up_to_500')).toEqual([])
+  })
+
+  it('has no limit above 500 V, where only the head names such a nominal voltage as well', () => {
+    // 0,100 MΩ: outside the 0,400 MΩ of a dry circuit at 400 V; above 500 V there is none.
+    const verdict = (voltageMilli: number, voltageClass: AnswerCircuit['voltageClass']) =>
+      answerVerdict(withoutLoads, measured(lighting.id, 'insulation_without_loads', 100), {
+        rules: table11,
+        on: '2026-10-19',
+        circuit: { ...lighting, voltageClass },
+        conditions: { nominalVoltageMilli: voltageMilli },
+      })
+
+    expect(verdict(400_000, 'up_to_500')).toMatchObject({ within: false, limitMilli: 400 })
+    expect(verdict(500_000, 'up_to_500')).toMatchObject({ within: false, limitMilli: 500 })
+    expect(verdict(690_000, 'up_to_500')).toMatchObject({
+      within: null,
+      limitMilli: null,
+      text: 'Die Nennspannung des Protokolls liegt über 500 V, und dafür ist kein Grenzwert hinterlegt.',
+    })
+    expect(verdict(230_000, 'above_500')).toMatchObject({ within: null, limitMilli: null })
+    // SELV and PELV keep their 0,25 MΩ, whatever the head names.
+    expect(verdict(690_000, 'selv_pelv')).toMatchObject({ within: false, limitMilli: 250 })
+  })
+
+  it('judges by the nominal voltage the head of the protocol is answered with', () => {
+    // 0,300 MΩ: within the 0,230 MΩ at 230 V, outside the 0,400 MΩ at 400 V, none above 500 V.
+    const findings = (voltage: readonly ReturnType<typeof head>[]) =>
+      answerFindings(
+        recurring,
+        [...voltage, measured(lighting.id, 'insulation_without_loads', 300)],
+        judgedBy,
+      )
+
+    expect(findings([])).toEqual([])
+    expect(findings([head('nominal_voltage', 400_000)])).toHaveLength(1)
+    expect(findings([head('nominal_voltage', 690_000)])).toEqual([])
+  })
+
+  it('judges a block whose circuit the chart no longer has with the conditions of the activity as well', () => {
+    // 0,020 MΩ in an IT system: within its 0,012 MΩ, where the circuit is gone as well.
+    const answers = [
+      head('earthing_system', 'it'),
+      measured('c-gone', 'insulation_without_loads', 20),
+    ]
+
+    expect(answerFindings(recurring, answers, judgedBy)).toEqual([])
+    expect(
+      answersMissing(recurring, answers, judgedBy).filter((sentence) =>
+        sentence.includes('außerhalb des Grenzwerts'),
+      ),
+    ).toEqual([])
+  })
+
+  it('wants a remark at a value outside the limit of its conditions, and none within them', () => {
+    const missing = (system: string) =>
+      answersMissing(
+        recurring,
+        [head('earthing_system', system), measured(lighting.id, 'insulation_without_loads', 20)],
+        judgedBy,
+      ).filter((sentence) => sentence.includes('außerhalb des Grenzwerts'))
+
+    // 0,020 MΩ: outside the 0,230 MΩ of a TN system, within the 0,012 MΩ of an IT system.
+    expect(missing('tn_s')).toHaveLength(1)
+    expect(missing('it')).toEqual([])
+  })
+
+  it('states the limit of its conditions in the evidence', () => {
+    const stated = statedAnswers(
+      recurring,
+      [head('earthing_system', 'it'), measured(lighting.id, 'insulation_without_loads', 12)],
+      { ...judgedBy, fileOf: () => null },
+    )
+
+    // 50 Ω per volt in an IT system at 230 V are 11,5 kΩ, rounded up to 0,012 MΩ.
+    expect(stated.find((each) => each.label === withoutLoads.label)?.limit).toMatchObject({
+      within: true,
+      bound: 'mindestens 0,012 MΩ',
+    })
   })
 })

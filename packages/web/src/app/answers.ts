@@ -291,6 +291,7 @@ export function pointVerdict(
   return answerVerdict(point.field, answer, {
     ...context,
     circuit: circuitOfPoint(point, context.circuits),
+    conditions: context.conditionsOf?.(point.group?.key ?? null, point.blockKey) ?? {},
   })
 }
 

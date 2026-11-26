@@ -298,6 +298,10 @@ export const workedOutLimitWords: Readonly<Record<WorkedOutLimitKind, string>> =
   rcd_trip_current: 'höchstens der Bemessungsdifferenzstrom',
   circuit_insulation: 'nach der Nennspannung',
   rcd_trip_time: 'nach der Art des RCD, selektiv oder ohne Verzögerung',
+  recurring_insulation_without_loads:
+    'nach Tabelle 11 der DGUV Information 203-072, je Volt der Nennspannung des Protokolls, ohne Angabe 230 V, nach Umgebung und Netzform, bei SELV und PELV ein fester Mindestwert',
+  recurring_insulation_with_loads:
+    'nach Tabelle 11 der DGUV Information 203-072, je Volt der Nennspannung des Protokolls, ohne Angabe 230 V, nach Umgebung und Netzform, bei SELV und PELV ein fester Mindestwert',
 }
 
 /** An asset an answer is about, as an evidence keeps it: its number and its name. */

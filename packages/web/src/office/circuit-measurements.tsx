@@ -11,9 +11,9 @@ import { TriangleAlert } from 'lucide-react'
  * The measurements per circuit of an evidence as a table (#350, the board
  * "Nachweis einer Prüfung mit Messungen je Stromkreis"), read from the frozen
  * state alone, as the PDF prints them (`circuitTablesOf`): the circuits board
- * by board in the order of the chart, a column for each measured value, the
- * limit of the loop impedance worked out of each circuit beside it, and what
- * else the block said. A value outside its limit stands in the colour of a
+ * by board in the order of the chart, a column for each measured value,
+ * beside each one whose limit is worked out of the circuit that limit, and
+ * what else the block said. A value outside its limit stands in the colour of a
  * conflict with its sign; the legend says where each limit comes from.
  */
 

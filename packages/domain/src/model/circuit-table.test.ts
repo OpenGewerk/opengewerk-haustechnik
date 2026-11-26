@@ -114,6 +114,9 @@ describe('the table of the measurements on circuits (#350)', () => {
 
   it('names a column by the symbol its label ends with', () => {
     expect(symbolOf('Durchgängigkeit des Schutzleiters RPE')).toBe('RPE')
+    // What follows the symbol with "ohne" or "mit" stays (#630).
+    expect(symbolOf('Isolationswiderstand Riso ohne Verbraucher')).toBe('Riso ohne Verbraucher')
+    expect(symbolOf('Isolationswiderstand Riso mit Verbrauchern')).toBe('Riso mit Verbrauchern')
   })
 
   it('has a column for each measured value, and the limit beside the loop impedance', () => {
@@ -172,7 +175,7 @@ describe('the table of the measurements on circuits (#350)', () => {
       `Zs aus Charakteristik und Nennstrom (${zsSource})`,
       'Riso mindestens 1,00 MΩ (DIN VDE 0100-600)',
       'RPE ohne Grenzwert',
-      'ohne Angaben zur Schutzeinrichtung keiner für Zs',
+      'ohne Leitungsschutzschalter B, C oder D mit Nennstrom oder ohne Regel am Tag der Prüfung keiner für Zs',
     ])
   })
 
@@ -241,6 +244,88 @@ describe('the table of the measurements on circuits (#350)', () => {
     expect(table?.boards[1]?.rows[0]?.values).toEqual([
       { figure: '0,70', outside: false, limit: '≥ 0,50' },
       { figure: '400', outside: false, limit: '130 bis 500' },
+    ])
+  })
+
+  it('gives the limit of each circuit beside both values of the insulation of the recurring test (#630)', () => {
+    const [table] = circuitTablesOf(
+      [
+        measured(
+          'c-f2',
+          'Isolationswiderstand Riso ohne Verbraucher',
+          '0,200 MΩ',
+          {
+            text: 'Außerhalb des Grenzwerts, mindestens 0,230 MΩ.',
+            source: 'DGUV Information 203-072, Tabelle 11',
+            within: false,
+            bound: 'mindestens 0,230 MΩ',
+          },
+          { workedOut: 'recurring_insulation_without_loads', remark: 'Zweimal gemessen' },
+        ),
+        measured(
+          'c-f2',
+          'Isolationswiderstand Riso mit Verbrauchern',
+          '0,100 MΩ',
+          {
+            text: 'Innerhalb des Grenzwerts, mindestens 0,069 MΩ.',
+            source: 'DGUV Information 203-072, Tabelle 11',
+            within: true,
+            bound: 'mindestens 0,069 MΩ',
+          },
+          { workedOut: 'recurring_insulation_with_loads' },
+        ),
+      ],
+      circuits,
+    )
+
+    expect(table?.columns.map((column) => [column.symbol, column.withLimit])).toEqual([
+      ['Riso ohne Verbraucher', true],
+      ['Riso mit Verbrauchern', true],
+    ])
+    expect(table?.limits).toEqual([
+      'Riso ohne Verbraucher nach Tabelle 11 der DGUV Information 203-072, je Volt der Nennspannung des Protokolls, ohne Angabe 230 V, nach Umgebung und Netzform, bei SELV und PELV ein fester Mindestwert (DGUV Information 203-072, Tabelle 11)',
+      'Riso mit Verbrauchern nach Tabelle 11 der DGUV Information 203-072, je Volt der Nennspannung des Protokolls, ohne Angabe 230 V, nach Umgebung und Netzform, bei SELV und PELV ein fester Mindestwert (DGUV Information 203-072, Tabelle 11)',
+    ])
+    expect(table?.boards[0]?.rows[1]?.remarks).toBe('Riso ohne Verbraucher: Zweimal gemessen')
+    expect(table?.boards[0]?.rows[1]?.values).toEqual([
+      { figure: '0,200', outside: true, limit: '≥ 0,230' },
+      { figure: '0,100', outside: false, limit: '≥ 0,069' },
+    ])
+  })
+
+  it('names a circuit above 500 V as why the insulation of the recurring test has no limit, not its protection (#630)', () => {
+    const [table] = circuitTablesOf(
+      [
+        measured('c-f2', 'Isolationswiderstand Riso ohne Verbraucher', '2,000 MΩ', null, {
+          workedOut: 'recurring_insulation_without_loads',
+        }),
+        measured('c-f2', 'Isolationswiderstand Riso mit Verbrauchern', '1,500 MΩ', null, {
+          workedOut: 'recurring_insulation_with_loads',
+        }),
+        measured('c-f2', 'Schleifenimpedanz Zs', '1,00 Ω', null, { workedOut: 'loop_impedance' }),
+      ],
+      circuits,
+    )
+
+    expect(table?.limits.filter((line) => line.includes('keiner für'))).toEqual([
+      'über 500 V oder ohne Regel am Tag der Prüfung keiner für Riso ohne Verbraucher und Riso mit Verbrauchern',
+      'ohne Leitungsschutzschalter B, C oder D mit Nennstrom oder ohne Regel am Tag der Prüfung keiner für Zs',
+    ])
+  })
+
+  it('names only a day before the rules where a limit of the insulation or the tripping time of version 2 is missing', () => {
+    const [table] = circuitTablesOf(
+      [
+        measured('c-f2', 'Isolationswiderstand Riso', '2,00 MΩ', null, {
+          workedOut: 'circuit_insulation',
+        }),
+        measured('c-f2', 'Auslösezeit tΔ', '24 ms', null, { workedOut: 'rcd_trip_time' }),
+      ],
+      circuits,
+    )
+
+    expect(table?.limits.filter((line) => line.includes('keiner für'))).toEqual([
+      'ohne Regel am Tag der Prüfung keiner für Riso und tΔ',
     ])
   })
 
