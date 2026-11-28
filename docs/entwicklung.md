@@ -119,7 +119,7 @@ PREVIEW_ROLE=technician PREVIEW_AREA=Nord pnpm run preview
 Die Datenbank liest die Vorschau aus `PREVIEW_DATABASE_URL` und nie aus `DATABASE_URL`, ihr Name endet auf `_preview`, und sie liegt auf diesem Rechner; der Port kommt aus `PREVIEW_PORT`. Die Vorschau steht unter `packages/server/src/preview/` und kommt weder in `dist` noch in das Abbild. Gegen sie läuft auch die Prüfung "Breiten und Auflösungen", die jede Seite beider Einstiege bei jeder Breite von 320 bis 3840 Pixeln hell und dunkel misst:
 
 ```bash
-docker run -d --rm --name widths-browser -p 127.0.0.1:3998:3000 -e TOKEN=probe -e TIMEOUT=1800000 ghcr.io/browserless/chromium:v2.64.3@sha256:f53b8d1dedf3dce0cc738ae4d5cb82a72cb895914364bc36345215da7b7b785c
+docker run -d --rm --name widths-browser -p 127.0.0.1:3998:3000 -e TOKEN=probe -e TIMEOUT=1800000 ghcr.io/browserless/chromium:v2.64.4@sha256:cee2fee0b7c92dfb70f0ab0738801a358b8548e5fdb954d5ca9315e459d11a71
 WIDTHS_BROWSER="ws://127.0.0.1:3998?token=probe" WIDTHS_ADDRESS=http://host.docker.internal:23800 pnpm --filter @opengewerk/haustechnik-web run widths
 ```
 
